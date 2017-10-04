@@ -42,11 +42,12 @@ class Lambda(object):
         kms_key=None,
         tracing=None,
         tags=None,
-        requirements = None
+        requirements=None,
+        package=None
     ):
         self.name = name
         self.account_id = account_id
-        self.source = os.path.join(curdir, source)
+        self.source = _normpath(source, curdir)
         self.role = role
         self.handler = handler
         self.region = region
@@ -62,7 +63,8 @@ class Lambda(object):
         self.kms_key = kms_key
         self.tracing = tracing
         self.tags = tags
-        self.requirements = os.path.join(curdir, requirements)
+        self.requirements = _normpath(requirements, curdir)
+        self.package = _normpath(package, curdir) if package else self.source + '.zip'
 
         self.built = False
 
@@ -208,20 +210,10 @@ class Lambda(object):
 
     # ====== Build the package ====== #
 
-    def build(self, location=None):
+    def build(self):
         """
         Builds the package from source, saving it to the given location.
-
-        @param location
-            Specifies the location in which to save the package zip file.
-            If this is not given, places it next to the package source in a
-            similarly named file with a ".zip" extension.
         """
-        if location:
-            self.package = location
-        elif not hasattr(self, 'package'):
-            self.package = location or self.source + '.zip'
-
         from .package import package
         package(self.source, self.requirements, self.package)
         self.built = True

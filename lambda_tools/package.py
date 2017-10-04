@@ -29,9 +29,14 @@ def package(source_folder, requirements_file, target):
                     t.file.write(s + os.linesep)
                 t.flush()
                 pip.main(['install', '-r', t.name, '-t', bundle])
+
+        dirname = os.path.dirname(target)
+        os.makedirs(dirname, exist_ok=True)
         base_name, fmt = os.path.splitext(target)
         fmt = fmt.replace(os.path.extsep, '') or 'zip'
+
         shutil.make_archive(base_name, fmt, bundle, './', True)
 
     finally:
         shutil.rmtree(bundle)
+
