@@ -3,6 +3,7 @@ Functionality to instantiate and upload the lambda in AWS.
 """
 
 import boto3
+import os
 import os.path
 import yaml
 
@@ -69,6 +70,15 @@ class Lambda(object):
         self.built = False
 
         self._session = boto3.session.Session(region_name=self.region)
+
+        # Post-processing: use environment variables when appropriate
+        if self.environment:
+            _assert_dict(self.environment, 'environment')
+            for k in self.environment:
+                if self.environment[k] == None:
+                    self.environment[k] = os.environ.get(k, '')
+        if self.tags:
+            _assert_dict(self.tags, 'tags')
 
 
     def _get_aws_client(self, name):
@@ -174,7 +184,7 @@ class Lambda(object):
             }
         if self.environment:
             result['Environment'] = {
-                'Variables': _assert_dict(self.environment, 'environment')
+                'Variables': self.environment
             }
         if self.kms_key:
             result['KMSKeyArn'] = self._get_kms_key_arn()
@@ -194,7 +204,7 @@ class Lambda(object):
             'ZipFile': self._get_code()
         }
         if self.tags:
-            result['Tags'] = _assert_dict(self.tags, 'tags')
+            result['Tags'] = self.tags, 'tags'
         return result
 
 
