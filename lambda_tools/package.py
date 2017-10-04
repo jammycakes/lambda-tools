@@ -18,6 +18,16 @@ import tempfile
 import zipfile
 
 def package(source_folder, requirements_file, target):
+    """
+    Creates a package ready to upload to AWS Lambda.
+
+    @param source_folder
+        The source code folder to upload.
+    @param requirements_file
+        The requirements file to use to specify the dependencies.
+    @param target
+        The file in which to save the target
+    """
     bundle = tempfile.mkdtemp()
     try:
         dir_util.copy_tree(source_folder, bundle)
