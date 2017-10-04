@@ -280,12 +280,16 @@ class Lambda(object):
             self.create()
 
 
-def load(filename, account_id=None):
+def load(filename, request=None, account_id=None):
     """
     Loads in the lambdas from the aws-lambda.yml file.
 
     @param filename
         Path to the aws-lambda.yml file.
+    @param request
+        A list of all the lambda functions that have been requested.
+    @account_id
+        The AWS account ID.
     """
     if not account_id:
         account_id = boto3.client('sts').get_caller_identity().get('Account')
@@ -297,4 +301,7 @@ def load(filename, account_id=None):
     with open(filename) as f:
         cfg = yaml.load(f)
 
-    return [Lambda(name, account_id, dirname, **cfg[name]) for name in cfg]
+    keys = set(cfg)
+    if request:
+        keys = keys.intersection(request)
+    return [Lambda(name, account_id, dirname, **cfg[name]) for name in keys]
