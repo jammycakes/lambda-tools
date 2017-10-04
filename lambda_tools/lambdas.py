@@ -63,7 +63,7 @@ class Lambda(object):
         self.kms_key = kms_key
         self.tracing = tracing
         self.tags = tags
-        self.requirements = _normpath(requirements, curdir)
+        self.requirements = _normpath(requirements, curdir) if requirements else None
         self.package = _normpath(package, curdir) if package else self.source + '.zip'
 
         self.built = False

@@ -32,6 +32,6 @@ hello_world:
   # This is the source code for your lambda.
   source: src/hello_world
   # This is your requirements.txt file for any packages used by the lambda.
-  requirements: requirements.txt
+  # requirements: requirements.txt
   # This is where the built package will be saved before being uploaded to AWS.
   package: build/hello_world.zip

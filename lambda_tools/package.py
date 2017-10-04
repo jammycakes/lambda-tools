@@ -31,14 +31,15 @@ def package(source_folder, requirements_file, target):
     bundle = tempfile.mkdtemp()
     try:
         dir_util.copy_tree(source_folder, bundle)
-        with open(requirements_file) as f:
-            with tempfile.NamedTemporaryFile(mode='w+t') as t:
-                for line in f:
-                    s = line.strip()
-                    s = re.sub(r'^-e\s+', '', s)
-                    t.file.write(s + os.linesep)
-                t.flush()
-                pip.main(['install', '-r', t.name, '-t', bundle])
+        if requirements_file:
+            with open(requirements_file) as f:
+                with tempfile.NamedTemporaryFile(mode='w+t') as t:
+                    for line in f:
+                        s = line.strip()
+                        s = re.sub(r'^-e\s+', '', s)
+                        t.file.write(s + os.linesep)
+                    t.flush()
+                    pip.main(['install', '-r', t.name, '-t', bundle])
 
         dirname = os.path.dirname(target)
         os.makedirs(dirname, exist_ok=True)
