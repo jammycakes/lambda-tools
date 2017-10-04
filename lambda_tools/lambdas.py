@@ -196,6 +196,16 @@ class Lambda(object):
         return result
 
 
+    # ====== Get function code ====== #
+
+    def _get_function_code(self):
+        return {
+            'FunctionName': self.name,
+            'ZipFile': self._get_code(),
+            'Publish': True
+        }
+
+
     # ====== Build the package ====== #
 
     def build(self, location=None):
@@ -227,7 +237,55 @@ class Lambda(object):
             self.build()
         data = self._get_function_creation_data()
         aws = self._get_aws_client('lambda')
-        aws.create_function(**data)
+        result = aws.create_function(**data)
+        self.arn = result['FunctionArn']
+
+
+    # ====== Update a function ====== #
+
+    def update(self):
+        """
+        Updates the lambda
+        """
+        if not self.built:
+            self.build()
+        aws = self._get_aws_client('lambda')
+
+        # Update the configuration data
+        data = self._get_function_configuration_data()
+        result = aws.update_function_configuration(**data)
+        self.arn = result['FunctionArn']
+
+        # Update function code
+        code = self._get_function_code()
+        aws.update_function_code(**code)
+
+        # Update the tags
+        tags = aws.list_tags(Resource=self.arn)
+        tags_to_clear = [x for x in tags['Tags'] if x not in self.tags]
+        if tags_to_clear:
+            aws.untag_resource(Resource=self.arn, TagKeys=tags_to_clear)
+        if self.tags:
+            aws.tag_resource(Resource=self.arn, Tags=self.tags)
+
+
+    # ====== Deploy ====== #
+
+    def deploy(self):
+        aws = self._get_aws_client('lambda')
+
+        def exists():
+            import botocore.exceptions
+            try:
+                aws.get_function_configuration(FunctionName=self.name)
+                return True
+            except botocore.exceptions.ClientError as ex:
+                return False
+
+        if exists():
+            self.update()
+        else:
+            self.create()
 
 
 def load(filename, account_id=None):
