@@ -39,7 +39,8 @@ hello_world:
     wibble: wobble
   environment:
     foo: bar
-    baz: glarch
+    # Empty value here will cause the environment variable to be passed through
+    baz:
 
   tracing: PassThrough | Active
   dead_letter: [ARN of SQS queue or SNS topic]
