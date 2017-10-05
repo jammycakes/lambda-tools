@@ -19,7 +19,7 @@ setup(
     author_email='code@jamesmckay.net',
     keywords=['aws-lambda', 'aws'],
     url='https://github.com/jammycakes/lambda-tools',
-    download_url = 'https://github.com/jammycakes/lambda-tools/archive/0.1.tar.gz',
+    download_url = 'https://github.com/jammycakes/lambda-tools/archive/{0}.tar.gz'.format(version),
     license='MIT',
     install_requires=pip_requirements,
     zip_safe=False,
