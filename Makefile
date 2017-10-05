@@ -13,4 +13,4 @@ upload: build
 	python setup.py upload
 
 upload-test: build
-	python setup.py upload -r pypitest
+	python setup.py sdist upload -r pypitest
