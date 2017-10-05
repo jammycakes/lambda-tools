@@ -10,7 +10,7 @@ tag:
 	git push --tags origin master
 
 upload: build
-	python setup.py upload
+	python setup.py sdist upload
 
 upload-test: build
 	python setup.py sdist upload -r pypitest
