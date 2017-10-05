@@ -1,4 +1,5 @@
 import click
+import json as j
 import sys
 
 @click.group()
@@ -6,33 +7,48 @@ def main():
     pass
 
 
+def _process(source, functions, action, json):
+    from .lambdas import load
+    lambdas = load(source, functions)
+    for l in lambdas:
+        action(l)
+    if json:
+        d = dict([[l.name, l.package] for l in lambdas])
+        print(j.dumps(d, separators=(',', ': '), indent=2))
+    if functions and not lambdas:
+        if not json:
+            print('None of the specified lambda definitions were found.')
+        sys.exit(1)
+
+
 # ====== build command ====== #
 
-@main.command('build')
+@main.command('build',
+    help='Build the specified lambda functions into packages ready for manual upload to AWS.'
+)
 @click.option('--source', '-s', default='aws-lambda.yml',
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
+@click.option('--json', '-j', is_flag=True,
+    help='Output the built packages in JSON format.'
+)
 @click.argument('functions', nargs=-1)
-def build(source, functions):
-    from .lambdas import load
-    lambdas = load(source, functions)
-    if functions and not lambdas:
-        print('None of the specified lambda definitions were found.')
-        sys.exit(1)
-    for l in lambdas:
-        l.build()
+def build(source, json, functions):
+    _process(source, functions, lambda x: x.build(), json)
 
 
-@main.command('deploy')
+# ====== deploy command ====== #
+
+@main.command('deploy',
+    help='Deploy the specified lambda functions to AWS.'
+)
 @click.option('--source', '-s', default='aws-lambda.yml',
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
-@click.argument('functions', nargs=-1)
-def deploy(source, functions):
-    from .lambdas import load
-    lambdas = load(source, functions)
-    if functions and not lambdas:
-        print('None of the specified lambda definitions were found.')
-        sys.exit(1)
-    for l in lambdas:
-        l.deploy()
+@click.option('--json', '-j', is_flag=True,
+    help='Output the built packages in JSON format.'
+)
+@click.argument('functions', nargs=-1
+)
+def deploy(source, json, functions):
+    _process(source, functions, lambda x: x.deploy(), json)
