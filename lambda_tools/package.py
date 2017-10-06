@@ -10,14 +10,14 @@ This involves:
 
 from distutils import dir_util
 import os
+import os.path
 import pip
 import re
 import shutil
-import sys
+import subprocess
 import tempfile
-import zipfile
 
-def package(source_folder, requirements_file, target):
+def package(source_folder, requirements_file, target, use_docker=True):
     """
     Creates a package ready to upload to AWS Lambda.
 
@@ -27,18 +27,32 @@ def package(source_folder, requirements_file, target):
         The requirements file to use to specify the dependencies.
     @param target
         The file in which to save the target
+    @param use_docker
+        True to use Docker (if available) to create the bundle, otherwise False.
+        You will need to use Docker if you are running on OSX or Windows and
+        one or more of your dependencies includes C source code which has to be
+        compiled. This is because binaries compiled on OSX or Windows will not
+        run on the Linux instances that are used to run Lambda code in AWS.
     """
     bundle = tempfile.mkdtemp()
     try:
         dir_util.copy_tree(source_folder, bundle)
         if requirements_file:
-            with open(requirements_file) as f:
-                with tempfile.NamedTemporaryFile(mode='w+t') as t:
-                    for line in f:
-                        s = line.strip()
-                        s = re.sub(r'^-e\s+', '', s)
-                        t.file.write(s + os.linesep)
-                    t.flush()
+            with open(requirements_file) as f, tempfile.NamedTemporaryFile(mode='w+t') as t:
+                for line in f:
+                    s = line.strip()
+                    s = re.sub(r'^-e\s+', '', s)
+                    t.file.write(s + os.linesep)
+                t.flush()
+                if use_docker and shutil.which('docker'):
+                    subprocess.run([
+                        'docker', 'run',
+                        '-v', os.path.realpath(t.name) + ':/requirements.txt',
+                        '-v', os.path.realpath(bundle) + ':/bundle',
+                        '-it', '--rm', 'python:3.6.3',
+                        'pip', 'install', '-r', '/requirements.txt', '-t', '/bundle'
+                    ])
+                else:
                     pip.main(['install', '-r', t.name, '-t', bundle])
 
         dirname = os.path.dirname(target)
@@ -50,4 +64,3 @@ def package(source_folder, requirements_file, target):
 
     finally:
         shutil.rmtree(bundle)
-
