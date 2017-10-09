@@ -16,6 +16,7 @@ def _assert_dict(data, name):
     else:
         raise LambdaError(name + ' needs to be a dictionary')
 
+
 def _normpath(path, rootpath=None):
     if path.startswith('~'):
         return os.path.expanduser(path)
@@ -220,23 +221,23 @@ class Lambda(object):
 
     # ====== Build the package ====== #
 
-    def build(self):
+    def build(self, silent=False):
         """
         Builds the package from source, saving it to the given location.
         """
         from .package import package
-        package(self.source, self.requirements, self.package)
+        package(self.source, self.requirements, self.package, silent=silent)
         self.built = True
 
 
     # ====== Create a function ====== #
 
-    def create(self):
+    def create(self, silent=False):
         """
         Creates the lambda
         """
         if not self.built:
-            self.build()
+            self.build(silent=silent)
         data = self._get_function_creation_data()
         aws = self._get_aws_client('lambda')
         result = aws.create_function(**data)
@@ -245,12 +246,12 @@ class Lambda(object):
 
     # ====== Update a function ====== #
 
-    def update(self):
+    def update(self, silent=False):
         """
         Updates the lambda
         """
         if not self.built:
-            self.build()
+            self.build(silent=silent)
         aws = self._get_aws_client('lambda')
 
         # Update the configuration data
@@ -273,7 +274,7 @@ class Lambda(object):
 
     # ====== Deploy ====== #
 
-    def deploy(self):
+    def deploy(self, silent=False):
         aws = self._get_aws_client('lambda')
 
         def exists():
@@ -285,9 +286,9 @@ class Lambda(object):
                 return False
 
         if exists():
-            self.update()
+            self.update(silent=silent)
         else:
-            self.create()
+            self.create(silent=silent)
 
 
 def load(filename, functions=None, account_id=None):

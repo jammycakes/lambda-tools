@@ -34,7 +34,7 @@ def _process(source, functions, action, json):
 )
 @click.argument('functions', nargs=-1)
 def build(source, json, functions):
-    _process(source, functions, lambda x: x.build(), json)
+    _process(source, functions, lambda x: x.build(silent=json), json)
 
 
 # ====== deploy command ====== #
@@ -51,4 +51,4 @@ def build(source, json, functions):
 @click.argument('functions', nargs=-1
 )
 def deploy(source, json, functions):
-    _process(source, functions, lambda x: x.deploy(), json)
+    _process(source, functions, lambda x: x.deploy(silent=json), json)

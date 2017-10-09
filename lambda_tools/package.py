@@ -17,7 +17,7 @@ import shutil
 import subprocess
 import tempfile
 
-def package(source_folder, requirements_file, target, use_docker=True):
+def package(source_folder, requirements_file, target, use_docker=True, silent=True):
     """
     Creates a package ready to upload to AWS Lambda.
 
@@ -45,13 +45,14 @@ def package(source_folder, requirements_file, target, use_docker=True):
                     t.file.write(s + os.linesep)
                 t.flush()
                 if use_docker and shutil.which('docker'):
+                    output= subprocess.DEVNULL if silent else None
                     subprocess.run([
                         'docker', 'run',
                         '-v', os.path.realpath(t.name) + ':/requirements.txt',
                         '-v', os.path.realpath(bundle) + ':/bundle',
                         '-it', '--rm', 'python:3.6.3',
                         'pip', 'install', '-r', '/requirements.txt', '-t', '/bundle'
-                    ])
+                    ], stdout=output)
                 else:
                     pip.main(['install', '-r', t.name, '-t', bundle])
 
