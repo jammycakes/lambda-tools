@@ -2,108 +2,43 @@
 Functionality to instantiate and upload the lambda in AWS.
 """
 
-import boto3
-import os
-import os.path
-import yaml
+from . import configuration
+from . import package
 
 class LambdaError(Exception):
     pass
-
-def _assert_dict(data, name):
-    if isinstance(data, dict):
-        return data
-    else:
-        raise LambdaError(name + ' needs to be a dictionary')
-
-
-def _normpath(path, rootpath=None):
-    if path.startswith('~'):
-        return os.path.expanduser(path)
-    elif rootpath:
-        return os.path.join(rootpath, path)
-    else:
-        path = os.path.abspath(path)
 
 class Lambda(object):
     """
     Encapsulates a lambda function, to be uploaded to AWS
     """
 
-    def __init__(self, name, account_id, curdir, source, handler, role,
-        region=None,
-        runtime='python3.6',
-        description='',
-        timeout=3,
-        memory=128,
-        vpc=None,
-        subnets=None,
-        security_groups=None,
-        dead_letter=None,
-        environment=None,
-        kms_key=None,
-        tracing=None,
-        tags=None,
-        requirements=None,
-        package=None
-    ):
-        self.name = name
-        self.account_id = account_id
-        self.source = _normpath(source, curdir)
-        self.role = role
-        self.handler = handler
-        self.region = region
-        self.runtime = runtime
-        self.description = description
-        self.timeout = timeout
-        self.memory = memory
-        self.subnets = subnets
-        self.vpc = vpc
-        self.security_groups = security_groups
-        self.dead_letter = dead_letter
-        self.environment = environment
-        self.kms_key = kms_key
-        self.tracing = tracing
-        self.tags = tags
-        self.requirements = _normpath(requirements, curdir) if requirements else None
-        self.package = _normpath(package, curdir) if package else self.source + '.zip'
-
+    def __init__(self, cfg):
+        self.cfg = cfg
         self.built = False
+        self.arn = None
 
-        self._session = boto3.session.Session(region_name=self.region)
-
-        # Post-processing: use environment variables when appropriate
-        if self.environment:
-            _assert_dict(self.environment, 'environment')
-            for k in self.environment:
-                if self.environment[k] == None:
-                    self.environment[k] = os.environ.get(k, '')
-        if self.tags:
-            _assert_dict(self.tags, 'tags')
-
-
-    def _get_aws_client(self, name):
-        return self._session.client(name)
-
+    def _get_aws_client(self, service_name):
+        return self.cfg.loader.client(service_name, self.cfg.region)
 
     def _get_role_arn(self):
         """
         Forces the role name into ARN format.
         """
-        if self.role.startswith('arn:aws:iam'):
-            return self.role
+        if self.cfg.role.startswith('arn:aws:iam'):
+            return self.cfg.role
         else:
-            return 'arn:aws:iam::{0}:role/{1}'.format(self.account_id, self.role)
+            return 'arn:aws:iam::{0}:role/{1}'.format(self.cfg.loader.account_id, self.cfg.role)
 
 
     def _get_vpcs(self):
-        if not self.vpc:
+        if not self.cfg.vpc:
             return None
         elif not hasattr(self, '_vpc_ids'):
             client = self._get_aws_client('ec2')
             vpcs = client.describe_vpcs(Filters=[{
                 'Name': 'tag:Name',
-                'Values': [ self.vpc ]
+                'Values': [ self.cfg.vpc ]
             }])
             self._vpc_ids = [vpc['VpcId'] for vpc in vpcs['Vpcs']]
 
@@ -115,9 +50,9 @@ class Lambda(object):
             client = self._get_aws_client('ec2')
             filters = [{
                 'Name': 'tag:Name',
-                'Values': self.subnets
+                'Values': self.cfg.subnets
             }]
-            if self.vpc:
+            if self.cfg.vpc:
                 filters.append({
                     'Name': 'vpc-id',
                     'Values': self._get_vpcs()
@@ -134,9 +69,9 @@ class Lambda(object):
             client = self._get_aws_client('ec2')
             filters = [{
                 'Name': 'group-name',
-                'Values': self.security_groups
+                'Values': self.cfg.security_groups
             }]
-            if self.vpc:
+            if self.cfg.vpc:
                 filters.append({
                     'Name': 'vpc-id',
                     'Values': self._get_vpcs()
@@ -150,7 +85,7 @@ class Lambda(object):
         # get KMS key ARN by alias
         if not hasattr(self, '_kms_key_arn'):
             client = self._get_aws_client('kms')
-            key = client.describe_key(KeyId='alias/' + self.kms_key)
+            key = client.describe_key(KeyId='alias/' + self.cfg.kms_key)
             self._kms_key_arn = key['KeyMetadata']['Arn']
         return self._kms_key_arn
 
@@ -158,7 +93,7 @@ class Lambda(object):
     def _get_code(self):
         if not self.built:
             raise LambdaError('The lambda has not yet been built.')
-        with open(self.package, 'rb') as data:
+        with open(self.cfg.package, 'rb') as data:
             return data.read()
 
 
@@ -166,32 +101,32 @@ class Lambda(object):
 
     def _get_function_configuration_data(self):
         result = {
-            'FunctionName': self.name,
-            'Runtime': self.runtime,
+            'FunctionName': self.cfg.name,
+            'Runtime': self.cfg.runtime,
             'Role': self._get_role_arn(),
-            'Handler': self.handler,
-            'Description': self.description,
-            'Timeout': self.timeout,
-            'MemorySize': self.memory
+            'Handler': self.cfg.handler,
+            'Description': self.cfg.description,
+            'Timeout': self.cfg.timeout,
+            'MemorySize': self.cfg.memory
         }
-        if self.subnets or self.security_groups:
+        if self.cfg.subnets or self.cfg.security_groups:
             result['VpcConfig'] = {
                 'SubnetIds': self._get_subnets(),
                 'SecurityGroupIds': self._get_security_groups()
             }
-        if self.dead_letter:
+        if self.cfg.dead_letter:
             result['DeadLetterConfig'] = {
-                'TargetArn': self.dead_letter
+                'TargetArn': self.cfg.dead_letter
             }
-        if self.environment:
+        if self.cfg.environment:
             result['Environment'] = {
-                'Variables': self.environment
+                'Variables': self.cfg.environment
             }
-        if self.kms_key:
+        if self.cfg.kms_key:
             result['KMSKeyArn'] = self._get_kms_key_arn()
-        if self.tracing:
+        if self.cfg.tracing:
             result['TracingConfig'] = {
-                'Mode': self.tracing
+                'Mode': self.cfg.tracing
             }
         return result
 
@@ -204,8 +139,8 @@ class Lambda(object):
         result['Code'] = {
             'ZipFile': self._get_code()
         }
-        if self.tags:
-            result['Tags'] = self.tags, 'tags'
+        if self.cfg.tags:
+            result['Tags'] = self.cfg.tags, 'tags'
         return result
 
 
@@ -213,7 +148,7 @@ class Lambda(object):
 
     def _get_function_code(self):
         return {
-            'FunctionName': self.name,
+            'FunctionName': self.cfg.name,
             'ZipFile': self._get_code(),
             'Publish': True
         }
@@ -225,8 +160,7 @@ class Lambda(object):
         """
         Builds the package from source, saving it to the given location.
         """
-        from .package import package
-        package(self.source, self.requirements, self.package, silent=silent)
+        package.package(self.cfg.source, self.cfg.requirements, self.cfg.package, silent=silent)
         self.built = True
 
 
@@ -265,24 +199,30 @@ class Lambda(object):
 
         # Update the tags
         tags = aws.list_tags(Resource=self.arn)
-        tags_to_clear = [x for x in tags['Tags'] if x not in self.tags]
+        tags_to_clear = [x for x in tags['Tags'] if x not in self.cfg.tags]
         if tags_to_clear:
             aws.untag_resource(Resource=self.arn, TagKeys=tags_to_clear)
-        if self.tags:
-            aws.tag_resource(Resource=self.arn, Tags=self.tags)
+        if self.cfg.tags:
+            aws.tag_resource(Resource=self.arn, Tags=self.cfg.tags)
 
 
     # ====== Deploy ====== #
 
     def deploy(self, silent=False):
+        """
+        Deploys the lambda to AWS.
+        """
         aws = self._get_aws_client('lambda')
 
         def exists():
+            """
+            Tests to see if the lambda exists.
+            """
             import botocore.exceptions
             try:
-                aws.get_function_configuration(FunctionName=self.name)
+                aws.get_function_configuration(FunctionName=self.cfg.name)
                 return True
-            except botocore.exceptions.ClientError as ex:
+            except botocore.exceptions.ClientError:
                 return False
 
         if exists():
@@ -302,17 +242,5 @@ def load(filename, functions=None, account_id=None):
     @account_id
         The AWS account ID.
     """
-    if not account_id:
-        account_id = boto3.client('sts').get_caller_identity().get('Account')
-    if filename.startswith('~'):
-        filename = os.path.expanduser(filename)
-    else:
-        filename = os.path.abspath(filename)
-    dirname = os.path.dirname(filename)
-    with open(filename) as f:
-        cfg = yaml.load(f)
-
-    keys = set(cfg)
-    if functions:
-        keys = keys.intersection(functions)
-    return [Lambda(name, account_id, dirname, **cfg[name]) for name in keys]
+    loader = configuration.Loader(filename, account_id=account_id)
+    return [Lambda(cfg) for cfg in loader.load(functions)]
