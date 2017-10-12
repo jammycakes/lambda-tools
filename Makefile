@@ -1,4 +1,4 @@
-.PHONY: test build tag upload upload-test
+.PHONY: test build release upload upload-test
 
 VERSION = $(shell cat .version)
 
@@ -8,12 +8,14 @@ test:
 build:
 	python3 setup.py sdist
 
-tag:
+release:
 	git tag $(VERSION) -m "Tag version $(VERSION)"
 	git push --tags origin master
 
 upload: build
-	python setup.py sdist upload
+	pip install twine
+	twine upload dist/* --skip-existing
 
 upload-test: build
-	python setup.py sdist upload -r pypitest
+	pip install twine
+	twine upload dist/* --repository-url https://test.pypi.org/legacy/ --skip-existing

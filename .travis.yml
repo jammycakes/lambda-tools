@@ -6,3 +6,9 @@ install:
 script:
   - make build
   - make test
+
+deploy:
+  - provider: script
+    script: make upload
+    on:
+      tags: true
