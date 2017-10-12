@@ -160,7 +160,8 @@ class Lambda(object):
         """
         Builds the package from source, saving it to the given location.
         """
-        package.package(self.cfg.source, self.cfg.requirements, self.cfg.package, silent=silent)
+        pkg = package.Package(self.cfg, use_docker=True, silent=silent)
+        pkg.create()
         self.built = True
 
 

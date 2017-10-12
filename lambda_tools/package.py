@@ -17,51 +17,99 @@ import shutil
 import subprocess
 import tempfile
 
-def package(source_folder, requirements_file, target, use_docker=True, silent=True):
-    """
-    Creates a package ready to upload to AWS Lambda.
+class Package(object):
 
-    @param source_folder
-        The source code folder to upload.
-    @param requirements_file
-        The requirements file to use to specify the dependencies.
-    @param target
-        The file in which to save the target
-    @param use_docker
-        True to use Docker (if available) to create the bundle, otherwise False.
-        You will need to use Docker if you are running on OSX or Windows and
-        one or more of your dependencies includes C source code which has to be
-        compiled. This is because binaries compiled on OSX or Windows will not
-        run on the Linux instances that are used to run Lambda code in AWS.
-    """
-    bundle = tempfile.mkdtemp()
-    try:
-        dir_util.copy_tree(source_folder, bundle)
-        if requirements_file:
-            with open(requirements_file) as f, tempfile.NamedTemporaryFile(mode='w+t') as t:
-                for line in f:
-                    s = line.strip()
-                    s = re.sub(r'^-e\s+', '', s)
-                    t.file.write(s + os.linesep)
-                t.flush()
-                if use_docker and shutil.which('docker'):
-                    output= subprocess.DEVNULL if silent else None
-                    subprocess.run([
-                        'docker', 'run',
-                        '-v', os.path.realpath(t.name) + ':/requirements.txt',
-                        '-v', os.path.realpath(bundle) + ':/bundle',
-                        '-it', '--rm', 'python:3.6.3',
-                        'pip', 'install', '-r', '/requirements.txt', '-t', '/bundle'
-                    ], stdout=output)
-                else:
-                    pip.main(['install', '-r', t.name, '-t', bundle])
+    def __init__(self, cfg, bundle_folder=None, use_docker=True, silent=True):
+        """
+        Creates an instance of the Package class.
 
-        dirname = os.path.dirname(target)
+        @param cfg
+            The configuration object for the lambda.
+        @param bundle_folder
+            The folder into which the bundle is to be created.
+            If none specified, a temporary folder will be created.
+        @param use_docker
+            `True` to use Docker to bundle and test the lambda.
+            `False` to bundle and test the lambda locally.
+        @param silent
+            `True` to suppress output to the console. Otherwise `False`.
+        """
+        self.cfg = cfg
+        self.bundle_folder = bundle_folder
+        self.use_docker = use_docker and not not shutil.which('docker')
+        self.silent = silent
+
+    def create_bundle_folder(self):
+        """
+        Ensures that the bundle folder exists.
+        """
+        self.bundle_folder = os.path.realpath(self.bundle_folder or tempfile.mkdtemp())
+        os.makedirs(self.bundle_folder, exist_ok=True)
+
+    def copy_files(self):
+        """
+        Copies the files from the source folder into the bundle.
+        """
+        dir_util.copy_tree(self.cfg.source, self.bundle_folder)
+
+    def install_requirements(self):
+        """
+        Installs the requirements specified in requirements.txt into the bundle.
+        """
+        if not self.cfg.requirements:
+            return
+        with open(self.cfg.requirements) as f, \
+                tempfile.NamedTemporaryFile(mode='w+t') as t:
+            for line in f:
+                s = line.strip()
+                s = re.sub(r'^-e\s+', '', s)
+                t.file.write(s + os.linesep)
+            t.flush()
+            if self.use_docker:
+                output = subprocess.DEVNULL if self.silent else None
+                subprocess.run([
+                    'docker', 'run',
+                    '-v', os.path.realpath(t.name) + ':/requirements.txt',
+                    '-v', os.path.realpath(self.bundle_folder) + ':/bundle',
+                    '-it', '--rm', 'python:3.6.3',
+                    'pip', 'install', '-r', '/requirements.txt', '-t', '/bundle'
+                ], stdout=output)
+            else:
+                pip.main(['install', '-r', t.name, '-t', self.bundle_folder])
+
+    def exec_lambda(self, test_data):
+        if self.use_docker:
+            subprocess.run([
+                'docker', 'run',
+                '-v', os.path.realpath(self.bundle_folder) + ':/var/task',
+                '-it', 'lambci/lambda:python3.6',
+                self.cfg.handler
+            ])
+
+    def create_archive(self):
+        """
+        Creates the archive file.
+        """
+        dirname = os.path.dirname(self.cfg.package)
         os.makedirs(dirname, exist_ok=True)
-        base_name, fmt = os.path.splitext(target)
+        base_name, fmt = os.path.splitext(self.cfg.package)
         fmt = fmt.replace(os.path.extsep, '') or 'zip'
+        shutil.make_archive(base_name, fmt, self.bundle_folder, './', True)
 
-        shutil.make_archive(base_name, fmt, bundle, './', True)
+    def remove_bundle_folder(self):
+        """
+        Removes the bundle folder.
+        """
+        shutil.rmtree(self.bundle_folder)
 
-    finally:
-        shutil.rmtree(bundle)
+    def create(self):
+        """
+        Performs all the above steps to create the bundle.
+        """
+        self.create_bundle_folder()
+        try:
+            self.copy_files()
+            self.install_requirements()
+            self.create_archive()
+        finally:
+            self.remove_bundle_folder()
