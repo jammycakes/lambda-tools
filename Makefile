@@ -1,6 +1,9 @@
-.PHONY: build upload
+.PHONY: test build tag upload upload-test
 
 VERSION = $(shell cat .version)
+
+test:
+	python3 setup.py test -a tests
 
 build:
 	python3 setup.py sdist

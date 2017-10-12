@@ -1,6 +1,9 @@
 import os.path
 import pip
+import sys
+
 from setuptools import setup
+from setuptools.command.test import test as TestCommand
 
 requirements = pip.req.parse_requirements(
     'requirements.txt', session=pip.download.PipSession(),
@@ -9,6 +12,26 @@ pip_requirements = [str(r.req) for r in requirements]
 
 with open(os.path.join(os.path.dirname(__file__), '.version')) as f:
     version = f.read()
+
+
+class PyTest(TestCommand):
+    user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
+
+    def initialize_options(self):
+        TestCommand.initialize_options(self)
+        self.pytest_args = []
+
+    def finalize_options(self):
+        TestCommand.finalize_options(self)
+        self.test_args = []
+        self.test_suite = True
+
+    def run_tests(self):
+        #import here, cause outside the eggs aren't loaded
+        import pytest
+        errno = pytest.main([self.pytest_args])
+        sys.exit(errno)
+
 
 setup(
     name='lambda_tools',
@@ -32,5 +55,7 @@ setup(
         'console_scripts': [
             'ltools=lambda_tools.command:main'
         ]
-    }
+    },
+    tests_require=['pytest'],
+    cmdclass = {'test': PyTest},
 )
