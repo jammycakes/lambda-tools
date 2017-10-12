@@ -13,7 +13,7 @@ def _process(source, functions, action, json):
     for l in lambdas:
         action(l)
     if json:
-        d = dict([[l.name, l.package] for l in lambdas])
+        d = dict([[l.cfg.name, l.cfg.package] for l in lambdas])
         print(j.dumps(d, separators=(',', ': '), indent=2))
     if functions and not lambdas:
         if not json:
