@@ -42,15 +42,21 @@ class Loader(object):
         """
         return os.path.join(self.folder, path)
 
-    def load(self, functions):
-        self.account_id = int(self.account_id or self.client('sts').get_caller_identity().get('Account'))
+    def get_data(self):
         with open(self.file) as f:
-            cfg = yaml.load(f)
+            return yaml.load(f)
 
-        keys = set(cfg)
+    def get_configurations(self, data, functions):
+        keys = set(data)
         if functions:
             keys = keys.intersection(functions)
-        return (Lambda(self, key, **cfg[key]) for key in keys)
+        return (Lambda(self, key, **data[key]) for key in keys)
+
+    def load(self, functions):
+        self.account_id = int(self.account_id or self.client('sts').get_caller_identity().get('Account'))
+        data = self.get_data()
+        return self.get_configurations(data, functions)
+
 
 
 # ====== Lambda class ====== #

@@ -1,0 +1,21 @@
+# ====== Test data ====== #
+
+# The following configruations should error because they do not have all the
+# required fields
+
+error-empty:
+
+error-no-handler:
+  role: something
+  source: something
+
+error-no-role:
+  handler: something
+  source: something
+
+error-no-source:
+  handler: something
+  role: something
+
+error-unrecognised-option:
+  kwyjibo: vquex
