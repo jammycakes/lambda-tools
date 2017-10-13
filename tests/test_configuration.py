@@ -2,6 +2,7 @@ import os.path
 import unittest
 import yaml
 
+import mock_boto3
 from lambda_tools import configuration
 
 
@@ -9,9 +10,6 @@ class MockLoader(configuration.Loader):
 
     def __init__(self, file, account_id=None, session=None):
         super.__init__(self, file, 1234567890, None)
-
-    def client(self, service_name, region_name=None):
-        pass
 
 
 class TestConfigurations(unittest.TestCase):
