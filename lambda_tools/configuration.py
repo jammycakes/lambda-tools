@@ -107,20 +107,31 @@ class Lambda(object):
 
         if memory:
             warn("memory", "memory_size")
-            self.memory = memory
+            self.memory_size = self.memory = memory
         else:
-            self.memory = memory_size
+            self.memory_size = self.memory = memory_size
 
         if subnets:
             warn("subnets", "vpc_config:subnets")
             self.subnets = subnets
+            self.vpc_config = {
+                "subnets": [ {'name': subnet } for subnet in subnets ]
+            }
         if security_groups:
             warn("security_groups", "vpc_config:security_groups")
             self.security_groups = security_groups
+            self.vpc_config = self.vpc_config or {}
+            self.vpc_config['security_groups'] = [
+                { 'name': sg } for sg in security_groups
+            ]
         if vpc:
             warn("vpc", "vpc_config:name")
             self.vpc = vpc
+            self.vpc_config = self.vpc_config or {}
+            self.vpc_config['name'] = vpc
+
         if vpc_config:
+            self.vpc_config = vpc_config
             self.subnets = [
                 value['name'] if isinstance(value, dict) else value
                 for value in vpc_config['subnets']
