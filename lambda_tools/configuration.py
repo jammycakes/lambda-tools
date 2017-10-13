@@ -3,10 +3,13 @@ A set of classes and functions to parse the  `aws-lambda.yml` file and load in
 the lambda configurations.
 """
 
+import logging
 import os.path
 import boto3
 import yaml
 from . import util
+
+log = logging.getLogger(__name__)
 
 # ====== Loader class ====== #
 
@@ -71,7 +74,7 @@ class Lambda(object):
         runtime='python3.6',
         description='',
         timeout=3,
-        memory=128,
+        memory=None,
         vpc=None,
         subnets=None,
         security_groups=None,
@@ -81,8 +84,17 @@ class Lambda(object):
         tracing=None,
         tags=None,
         requirements=None,
-        package=None
+        package=None,
+        # New parameters
+        vpc_config=None,
+        tracing_config=None,
+        dead_letter_config=None,
+        memory_size=128
     ):
+        def warn(setting, should_use):
+            log.warn('Setting: "{0}" is deprecated: use "{1}" instead.'.format(setting, should_use))
+            log.warn('This setting will be removed in a future version of lambda_tools.')
+
         self.loader = loader
         self.name = name
         self.source = self.loader.abspath(source)
@@ -92,14 +104,54 @@ class Lambda(object):
         self.runtime = runtime
         self.description = description
         self.timeout = timeout
-        self.memory = memory
-        self.subnets = subnets
-        self.vpc = vpc
-        self.security_groups = security_groups
-        self.dead_letter = dead_letter
+
+        if memory:
+            warn("memory", "memory_size")
+            self.memory = memory
+        else:
+            self.memory = memory_size
+
+        if subnets:
+            warn("subnets", "vpc_config:subnets")
+            self.subnets = subnets
+        if security_groups:
+            warn("security_groups", "vpc_config:security_groups")
+            self.security_groups = security_groups
+        if vpc:
+            warn("vpc", "vpc_config:name")
+            self.vpc = vpc
+        if vpc_config:
+            self.subnets = [
+                value['name'] if isinstance(value, dict) else value
+                for value in vpc_config['subnets']
+            ]
+            self.security_groups = [
+                value['name'] if isinstance(value, dict) else value
+                for value in vpc_config['security_groups']
+            ]
+            self.vpc = vpc_config.get('name')
+
+        if dead_letter:
+            warn("dead_letter", "dead_letter_config:target_arn")
+            self.dead_letter = dead_letter
+        elif dead_letter_config:
+            self.dead_letter = dead_letter_config.get('target_arn')
+
         self.environment = environment
-        self.kms_key = kms_key
-        self.tracing = tracing
+        if isinstance(environment, dict):
+            if len(environment) == 1 and 'variables' in environment:
+                self.environment = environment['variables']
+            else:
+                warn("environment", "environment:variables")
+
+        self.kms_key = kms_key.get('name') if isinstance(kms_key, dict) else kms_key
+
+        if tracing:
+            warn("tracing", "tracing_config:mode")
+            self.tracing = tracing
+        elif tracing_config:
+            self.tracing = tracing_config['mode']
+
         self.tags = tags
         self.requirements = self.loader.abspath(requirements) if requirements else None
         self.package = self.loader.abspath(package) if package else self.source + '.zip'
