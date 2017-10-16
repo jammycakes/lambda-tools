@@ -61,7 +61,6 @@ class Loader(object):
         return self.get_configurations(data, functions)
 
 
-
 # ====== Lambda class ====== #
 
 class Lambda(object):
@@ -107,67 +106,72 @@ class Lambda(object):
 
         if memory:
             warn("memory", "memory_size")
-            self.memory_size = self.memory = memory
+            self.memory_size = memory
         else:
-            self.memory_size = self.memory = memory_size
+            self.memory_size = memory_size
 
         if subnets:
             warn("subnets", "vpc_config:subnets")
-            self.subnets = subnets
             self.vpc_config = {
                 "subnets": [ {'name': subnet } for subnet in subnets ]
             }
         if security_groups:
             warn("security_groups", "vpc_config:security_groups")
-            self.security_groups = security_groups
             self.vpc_config = self.vpc_config or {}
             self.vpc_config['security_groups'] = [
                 { 'name': sg } for sg in security_groups
             ]
         if vpc:
             warn("vpc", "vpc_config:name")
-            self.vpc = vpc
             self.vpc_config = self.vpc_config or {}
             self.vpc_config['name'] = vpc
 
         if vpc_config:
             self.vpc_config = vpc_config
-            self.subnets = [
-                value['name'] if isinstance(value, dict) else value
-                for value in vpc_config['subnets']
+            self.vpc_config['subnets'] = [
+                a if isinstance(a, dict) else { 'name': a }
+                for a in self.vpc_config['subnets']
             ]
-            self.security_groups = [
-                value['name'] if isinstance(value, dict) else value
-                for value in vpc_config['security_groups']
+            self.vpc_config['security_groups'] = [
+                a if isinstance(a, dict) else { 'name': a }
+                for a in self.vpc_config['security_groups']
             ]
-            self.vpc = vpc_config.get('name')
 
         if dead_letter:
             warn("dead_letter", "dead_letter_config:target_arn")
-            self.dead_letter = dead_letter
+            self.dead_letter_config = {
+                'target_arn': dead_letter
+            }
         elif dead_letter_config:
-            self.dead_letter = dead_letter_config.get('target_arn')
+            self.dead_letter_config = dead_letter_config
 
         self.environment = environment
         if isinstance(environment, dict):
             if len(environment) == 1 and 'variables' in environment:
-                self.environment = environment['variables']
+                self.environment = environment
             else:
+                self.environment = {
+                    'variables': environment
+                }
                 warn("environment", "environment:variables")
 
-        self.kms_key = kms_key.get('name') if isinstance(kms_key, dict) else kms_key
+        self.kms_key = kms_key if isinstance(kms_key, dict) else { 'name': kms_key }
 
         if tracing:
             warn("tracing", "tracing_config:mode")
-            self.tracing = tracing
+            self.tracing_config = {
+                'mode': tracing
+            }
         elif tracing_config:
-            self.tracing = tracing_config['mode']
+            self.tracing_config = tracing_config
 
         self.tags = tags
         self.requirements = self.loader.abspath(requirements) if requirements else None
         self.package = self.loader.abspath(package) if package else self.source + '.zip'
 
-        # Post-processing: use environment variables when appropriate
+        # Post-processing
+
+        # use environment variables when appropriate
         if self.environment:
             util.assert_dict(self.environment, 'environment')
             for k in self.environment:

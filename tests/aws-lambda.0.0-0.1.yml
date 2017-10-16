@@ -52,7 +52,7 @@ test-0.1:
   vpc_config:
     name: My VPC
     subnets:
-      - name: Public subnet
+      - Public subnet
       - name: Private subnet
     security_groups:
       - name: allow_database

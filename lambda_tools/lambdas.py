@@ -8,6 +8,40 @@ from . import package
 class LambdaError(Exception):
     pass
 
+
+def _lookup_ids(items, **lookups):
+    """
+    Given a list of item descriptors that may specify either their IDs or their
+    names, returns their IDs.
+
+    @param items:
+        The items loaded in from the YAML file. Their YAML representation
+        would look like this:
+        ```
+        items:
+        - item_1_name
+        - name: item_2_name
+        - id: item_3_id
+        ```
+
+    @param lookups:
+        A dictionary of functions that take a list of names, ARNs or whatever,
+        and returns their IDs.
+    """
+
+    from collections import defaultdict
+    dct = defaultdict(list)
+    for item in items:
+        if isinstance(item, dict):
+            for k in item:
+                dct[k].append(item[k])
+    lookups[id] = lookups.get(id, lambda x: x)
+    result = []
+    for k in lookups:
+        result.extend(lookups[k](dct[k]))
+    return result
+
+
 class Lambda(object):
     """
     Encapsulates a lambda function, to be uploaded to AWS
@@ -32,52 +66,70 @@ class Lambda(object):
 
 
     def _get_vpcs(self):
-        if not self.cfg.vpc:
-            return None
-        elif not hasattr(self, '_vpc_ids'):
+
+        def lookup_vpcs(names):
             client = self._get_aws_client('ec2')
             vpcs = client.describe_vpcs(Filters=[{
                 'Name': 'tag:Name',
-                'Values': [ self.cfg.vpc ]
+                'Values': names
             }])
-            self._vpc_ids = [vpc['VpcId'] for vpc in vpcs['Vpcs']]
+            return [vpc['VpcId'] for vpc in vpcs['Vpcs']]
+
+        if not self.cfg.vpc_config:
+            return None
+        elif not hasattr(self, '_vpc_ids'):
+            self._vpc_ids = _lookup_ids([self.cfg.vpc_config], name=lookup_vpcs)
 
         return self._vpc_ids
 
 
     def _get_subnets(self):
-        if not hasattr(self, '_subnet_ids'):
+
+        def lookup_subnets(names):
+            vpcs = self._get_vpcs()
             client = self._get_aws_client('ec2')
             filters = [{
                 'Name': 'tag:Name',
-                'Values': self.cfg.subnets
+                'Values': names
             }]
-            if self.cfg.vpc:
+            if vpcs:
                 filters.append({
                     'Name': 'vpc-id',
-                    'Values': self._get_vpcs()
+                    'Values': vpcs
                 })
 
             subnets = client.describe_subnets(Filters=filters)
-            self._subnet_ids = [subnet['SubnetId'] for subnet in subnets['Subnets']]
+            return [subnet['SubnetId'] for subnet in subnets['Subnets']]
+
+        if not hasattr(self, '_subnet_ids'):
+            subnets = self.cfg.vpc_config['subnets']
+            self._subnet_ids = _lookup_ids(subnets, name=lookup_subnets)
 
         return self._subnet_ids
 
 
     def _get_security_groups(self):
-        if not hasattr(self, '_security_group_ids'):
+
+        def lookup_groups(names):
+            vpcs = self._get_vpcs()
             client = self._get_aws_client('ec2')
             filters = [{
                 'Name': 'group-name',
-                'Values': self.cfg.security_groups
+                'Values': names
             }]
-            if self.cfg.vpc:
+            if vpcs:
                 filters.append({
                     'Name': 'vpc-id',
-                    'Values': self._get_vpcs()
+                    'Values': vpcs
                 })
+
             groups = client.describe_security_groups(Filters=filters)
-            self._security_group_ids = [group['GroupId'] for group in groups['SecurityGroups']]
+            return [group['GroupId'] for group in groups['SecurityGroups']]
+
+        if not hasattr(self, '_security_group_ids'):
+            groups = self.cfg.vpc_config['security_groups']
+            self._security_group_ids = _lookup_ids(groups, name=lookup_groups)
+
         return self._security_group_ids
 
 
@@ -85,8 +137,8 @@ class Lambda(object):
         # get KMS key ARN by alias
         if not hasattr(self, '_kms_key_arn'):
             client = self._get_aws_client('kms')
-            key = client.describe_key(KeyId='alias/' + self.cfg.kms_key)
-            self._kms_key_arn = key['KeyMetadata']['Arn']
+            self._kms_key_arn = self.cfg.kms_key.get('arn') or \
+                client.describe_key(KeyId='alias/' + self.cfg.kms_key['name'])['KeyMetadata']['Arn']
         return self._kms_key_arn
 
 
@@ -107,26 +159,27 @@ class Lambda(object):
             'Handler': self.cfg.handler,
             'Description': self.cfg.description,
             'Timeout': self.cfg.timeout,
-            'MemorySize': self.cfg.memory
+            'MemorySize': self.cfg.memory_size
         }
-        if self.cfg.subnets or self.cfg.security_groups:
+
+        if self.cfg.vpc_config:
             result['VpcConfig'] = {
                 'SubnetIds': self._get_subnets(),
                 'SecurityGroupIds': self._get_security_groups()
             }
-        if self.cfg.dead_letter:
+        if self.cfg.dead_letter_config:
             result['DeadLetterConfig'] = {
-                'TargetArn': self.cfg.dead_letter
+                'TargetArn': self.cfg.dead_letter_config['target_arn']
             }
         if self.cfg.environment:
             result['Environment'] = {
-                'Variables': self.cfg.environment
+                'Variables': self.cfg.environment['variables']
             }
         if self.cfg.kms_key:
             result['KMSKeyArn'] = self._get_kms_key_arn()
-        if self.cfg.tracing:
+        if self.cfg.tracing_config:
             result['TracingConfig'] = {
-                'Mode': self.cfg.tracing
+                'Mode': self.cfg.tracing_config['mode']
             }
         return result
 
