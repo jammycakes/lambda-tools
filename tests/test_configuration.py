@@ -23,7 +23,7 @@ class TestConfigurations(unittest.TestCase):
         data = loader.get_data()
         for c in data:
             try:
-                l = configuration.Lambda(loader, c, **data[c])
+                l = configuration.Function(loader, c, **data[c])
                 self.fail('Configuration ' + l.name + ' failed to fail')
             except TypeError:
                 pass

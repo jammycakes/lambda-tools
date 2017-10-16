@@ -53,7 +53,7 @@ class Loader(object):
         keys = set(data)
         if functions:
             keys = keys.intersection(functions)
-        return (Lambda(self, key, **data[key]) for key in keys)
+        return (Function(self, key, **data[key]) for key in keys)
 
     def load(self, functions):
         self.account_id = int(self.account_id or self.client('sts').get_caller_identity().get('Account'))
@@ -61,9 +61,9 @@ class Loader(object):
         return self.get_configurations(data, functions)
 
 
-# ====== Lambda class ====== #
+# ====== Function class ====== #
 
-class Lambda(object):
+class Function(object):
     """
     Encapsulates a lambda function, to be uploaded to AWS
     """
