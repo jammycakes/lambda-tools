@@ -9,7 +9,11 @@ from lambda_tools import lambdas
 class MockLoader(configuration.Loader):
 
     def __init__(self, file, account_id=None, session=None):
-        super().__init__(file, mock_boto3.MOCK_ACCOUNT_ID, None)
+        super().__init__(
+            file,
+            mock_boto3.MOCK_ACCOUNT_ID,
+            session or mock_boto3.MockEc2Session()
+        )
         self.services = {
             "ec2": mock_boto3.MockEc2Client(),
             "kms": mock_boto3.MockKmsClient(),

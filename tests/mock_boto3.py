@@ -5,6 +5,12 @@ This module defines some mock objects that we can use in place of boto3 calls.
 MOCK_ACCOUNT_ID = 123456789012
 MOCK_AWS_REGION = "eu-west-1"
 
+class MockEc2Session(object):
+
+    def __init__(self):
+        self.region_name = MOCK_AWS_REGION
+
+
 class MockEc2Client(object):
 
     def describe_vpcs(self, *args, **kwargs):
