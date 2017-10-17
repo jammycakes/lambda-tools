@@ -24,7 +24,7 @@ class Loader(object):
     def __init__(self, file, account_id=None, session=None):
         self.file = os.path.abspath(os.path.expanduser(file))
         self.folder = os.path.dirname(self.file)
-        self.session = session
+        self.session = session or boto3.session.Session()
         self.account_id = account_id
         self._clients = {}
 
@@ -35,7 +35,7 @@ class Loader(object):
         if service_name in region:
             return region[service_name]
         else:
-            service = (self.session or boto3).client(service_name, region_name=region_name)
+            service = self.session.client(service_name, region_name=region_name)
             region[service_name] = service
             return service
 
@@ -95,6 +95,7 @@ class Function(object):
             log.warn('This setting will be removed in a future version of lambda_tools.')
 
         self.loader = loader
+
         self.name = name
         self.source = self.loader.abspath(source)
         self.role = role
@@ -110,6 +111,7 @@ class Function(object):
         else:
             self.memory_size = memory_size
 
+        self.vpc_config = None
         if subnets:
             warn("subnets", "vpc_config:subnets")
             self.vpc_config = {
@@ -144,6 +146,8 @@ class Function(object):
             }
         elif dead_letter_config:
             self.dead_letter_config = dead_letter_config
+        else:
+            self.dead_letter_config = None
 
         self.environment = environment
         if isinstance(environment, dict):
@@ -164,6 +168,8 @@ class Function(object):
             }
         elif tracing_config:
             self.tracing_config = tracing_config
+        else:
+            self.tracing_config = None
 
         self.tags = tags
         self.requirements = self.loader.abspath(requirements) if requirements else None

@@ -142,6 +142,34 @@ class Lambda(object):
         return self._kms_key_arn
 
 
+    def _get_dead_letter_arn(self):
+
+        def get_sns_arn(topic):
+            return "arn:aws:sns:{0}:{1}:{2}".format(
+                self.cfg.loader.session.region_name,
+                self.cfg.loader.account_id,
+                topic
+            )
+
+        def get_sqs_arn(queue):
+            return "arn:aws:sqs:{0}:{1}:{2}".format(
+                self.cfg.loader.session.region_name,
+                self.cfg.loader.account_id,
+                queue
+            )
+
+        if self.cfg.dead_letter_config:
+            dcfg = self.cfg.dead_letter_config
+
+            if 'target_arn' in dcfg:
+                return dcfg['target_arn']
+            elif 'target' in dcfg:
+                if 'sns' in dcfg['target']:
+                    return get_sns_arn(dcfg['target']['sns'])
+                elif 'sqs' in dcfg['target']:
+                    return get_sqs_arn(dcfg['target']['sqs'])
+            return None
+
     def _get_code(self):
         if not self.built:
             raise LambdaError('The lambda has not yet been built.')
@@ -169,7 +197,7 @@ class Lambda(object):
             }
         if self.cfg.dead_letter_config:
             result['DeadLetterConfig'] = {
-                'TargetArn': self.cfg.dead_letter_config['target_arn']
+                'TargetArn': self._get_dead_letter_arn()
             }
         if self.cfg.environment:
             result['Environment'] = {
