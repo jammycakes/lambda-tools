@@ -20,78 +20,206 @@ Sample `aws-lambda.yml` file:
 
 ```yml
 hello_world:
-  description: A basic Hello World handler
-  region: eu-west-1
-  runtime: python3.6
+  # These three settings are required
   handler: hello.handler
-  memory: 128
+  role: service-role/NONTF-lambda
+  source: src/hello_world
+
+  # Optional settings
+  description: A basic Hello World handler
+  memory_size: 128
+  package: build/hello_world.zip
+  region: eu-west-1
+  requirements: requirements.txt
+  runtime: python3.6
   timeout: 3
 
-  # Role, VPC, subnets, security groups and KMS key are all specified by name.
-  role: service-role/NONTF-lambda
-  vpc: My VPC
-  subnets:
-    - Public subnet
-    - Private subnet
-  security_groups:
-    - allow_database
-  kms_key: aws/lambda
+  dead_letter_config:
+    target:
+      sqs: SQS queue name; alternatively, an SNS topic can be specified.
+
+  environment:
+    variables:
+      foo: bar
+      # Empty value here will cause the environment variable to be passed through
+      baz:
+
+  kms_key:
+    name: aws/lambda
 
   tags:
-    wibble: wobble
-  environment:
-    foo: bar
-    # Empty value here will cause the environment variable to be passed through
-    baz:
+    Account: Marketing
+    Application: Newsletters
 
-  tracing: PassThrough | Active
-  dead_letter: [ARN of SQS queue or SNS topic]
+  tracing_config:
+    mode: PassThrough | Active
 
-  # Folder and file locations. All are relative to the .yml file.
-  # This is the source code for your lambda.
-  source: src/hello_world
-  # This is your requirements.txt file for any packages used by the lambda.
-  requirements: requirements.txt
-  # This is where the built package will be saved before being uploaded to AWS.
-  package: build/hello_world.zip
+  vpc_config:
+    name: My VPC
+    subnets:
+      - name: Public subnet
+      - name: Private subnet
+    security_groups:
+      - name: allow_database
 ```
 
-You can define multiple lambdas in a single file. The properties are as follows:
+Argument Reference
+------------------
 
-| Property          | Default         | Description |
-|-------------------|---------------  |-------------|
-| `handler`         | **Required.**   | The name of the Python module and function which will handle the lambda invocation. Given in the format `module.handler`. |
-| `role`            | **Required.**   | The name of the IAM role under which the function will run. |
-| `source`          | **Required.**   | The folder containing the function's source code. This is relative to the `aws-lambda.yml` file. |
-| `dead_letter`     |                 | The ARN of the SQS queue or SNS topic used as a dead letter queue for failed lambda invocations. |
-| `description`     |                 | A short text description of the function. |
-| `environment`     |                 | Environment variables to be configured for the function. Any blank environment variables that you specify here will be taken from the environment passed to the `ltools` command. |
-| `kms_key`         |                 | The name of the KMS key used to encrypt the environment variables. If not specified, the default `aws/lambda` KMS key will be used. |
-| `memory`          | 128             | The amount of memory allocated to the function, in gigabytes. Must be a multiple of 64 gigabytes. |
-| `package`         | `{source}.zip`  | The filename where the function's bundled package should be saved, ready to upload to AWS. This is relative to the `aws-lambda.yml` file. |
-| `region`          |                 | The AWS region into which the function is to be deployed. If not specified, it will be taken from the environment variables or the configuration information set using `aws configure`. |
-| `requirements`    |                 | The requirements.txt file specifying any Python packages that need to be installed along with your lambda. This is relative to the `aws-lambda.yml` file. |
-| `runtime`         | `python3.6`     | The language runtime used by the function. Note that while you may specify any language supported by AWS, only `python3.6` (the default) is currently fully supported by lambda_tools. |
-| `security_groups` |                 | The names of the security groups which should apply to the function when running in a VPC. |
-| `subnets`         |                 | The names of the subnets into which the function should be placed. |
-| `tags`            |                 | The tags to apply to the function. |
-| `timeout`         | 3               | The timeout for the function to run, in seconds. |
-| `tracing`         |                 | The tracing settings for your function. Should be set to either `PassThrough` or `Active`. |
-| `vpc`             |                 | The name of the VPC into which the function should be launched. You don't need to specify this unless it can not be uniquely identified from the names of the security groups and subnets. |
+Your `aws-lambda.yml` file can contain multiple function definitions.
+The name of each top-level key will be used as the name of your function.
 
-A few points worth noting here:
+### `handler`
+**Required**. The function's entry point into your code. For Python, this is
+specified in the format `module.handler`.
 
- * `handler`, `source` and `role` are all required.
- * If you want to run your lambda in a VPC, you must specify both `subnets` and
-    `security_groups`. You don't have to specify `vpc` as well unless you have
-    identically named subnets or security groups in multiple VPCs and need to
-    disambiguate them.
- * `role`, `vpc`, `subnets`, `security_groups` and `kms_key` are all specified
-    by name rather than ID or ARN.
- * `dead_letter` does not yet support specifying SNS topics or SQS queues by
-    name. See [GitHub issue 3](https://github.com/jammycakes/lambda-tools/issues/3)
-    for the latest status on this one.
- * All folder and file names are relative to your `aws-lambda.yml` file.
+### `role`
+**Required**. The name of the IAM role attached to the lambda function.
+This determines who or what can run your function, as well as what resources
+it can access.
+
+### `source`
+**Required**. The folder containing your function's source code. This is
+specified relative to the `aws-lambda.yml` file.
+
+### `description`
+A short description of what your function does.
+
+### `memory_size`
+The amount of memory that your function can use at runtime, in gigabytes.
+Must be a multiple of 64 gigabytes. Default value: 128.
+
+### `package`
+The filename where your function's bundled package should be saved, ready to
+upload to AWS. This is relative to the `aws-lambda.yml` file.
+
+If not specified, it will be saved into a zip file next to the folder containing
+your source code.
+
+### `region`
+The AWS region into which your function is to be deployed. If not specified,
+it will be taken from either the environment variables or the configuration
+information that you have set using `aws configure`.
+
+### `requirements`
+A `requirements.txt` file specifying any Python packages that need to be
+installed along with your lambda. This is relative to the `aws-lambda.yml` file.
+
+### `runtime`
+The language runtime used by the function. Note that while you may specify any
+language supported by AWS, only `python3.6` (the default) is currently fully
+supported by lambda_tools.
+
+### `timeout`
+The maximum time, in seconds, that your function is allowed to run before being
+terminated. Default: 3 seconds.
+
+### `dead_letter_config`
+Configures your lambda function's dead letter queue, to which notifications of
+failed invocations are sent. This can be either an SNS topic or an SQS queue,
+and it can be specified either by name or by ARN.
+
+It can be configured in one of the following ways:
+
+```yaml
+  dead_letter_config:
+    target_arn: (the ARN of your queue or topic)
+
+  dead_letter_config:
+    target:
+      sns: (the name of your SNS topic)
+
+  dead_letter_config:
+    target:
+      sqs: (the name of your SQS queue)
+```
+
+### `environment`
+The environment variables to be passed to your function.
+It is configured as follows:
+
+```yaml
+  environment:
+    variables:
+      VARIABLE: some value
+      PASSTHROUGH_VARIABLE:
+```
+
+Variables whose value is left blank will be passed through to the function
+configuration from the environment which invokes `ltools`.
+
+### `kms_key`
+The KMS key used to encrypt the environment variables. This can be specified
+either by name or by ARN:
+
+```yaml
+  kms_key:
+    name: aws/lambda
+
+  kms_key:
+    arn: "arn:aws:kms:eu-west-1:123456789012:key:01234567-89ab-cdef-0123-456789abcdef"
+```
+
+If no key is specified, the default key, `aws/lambda`, will be used.
+
+### `tags`
+The tags to be assigned to your lambda function. For example:
+
+```yaml
+  tags:
+    Account: marketing
+    Application: newsletters
+```
+
+### `tracing_config`
+The tracing settings for your application. This contains a single argument,
+`mode`:
+
+```yaml
+  tracing_config:
+    mode: PassThrough
+```
+`mode` can be set to either `PassThrough` or `Active`. If `PassThrough`, Lambda
+will only trace the request from an upstream service if it contains a tracing
+header with `sampled=1`. If `Active`, Lambda will respect any tracing header it
+receives from an upstream service. If no tracing header is received, Lambda will
+call X-Ray for a tracing decision.
+
+### `vpc_config`
+Add this section if you want your lambda function to access your VPC. You will
+need to specify subnets and security groups:
+
+```yaml
+  vpc_config:
+    subnets:
+      - id: subnet-12345678
+      - name: public-subnet
+      - another-subnet
+    security_groups:
+      - id: sg-12345678
+      - name: some-group
+      - another-group
+```
+
+Security groups and subnets can be specified either by ID or by name. As a
+shortcut, you can omit `name:` when specifying it by name.
+
+If you have two or more security groups or subnets with the same name in
+different VPCs, you will also need to specify the ID or name of the VPC in order
+to disambiguate them:
+
+```yaml
+  vpc_config:
+    name: My VPC
+    subnets:
+      - id: subnet-12345678
+      - name: public-subnet
+      - another-subnet
+    security_groups:
+      - id: sg-12345678
+      - name: some-group
+      - another-group
+```
 
 Command line instructions
 -------------------------
