@@ -1,5 +1,6 @@
 import click
 import json as j
+import os
 import sys
 
 @click.group()
@@ -20,6 +21,23 @@ def _process(source, functions, action, json):
             print('None of the specified lambda definitions were found.')
         sys.exit(1)
 
+
+@main.command('list',
+    help='Lists the lambda functions in the definition file'
+)
+@click.option('--source', '-s', default='aws-lambda.yml',
+    help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
+)
+@click.option('--json', '-j', is_flag=True,
+    help='Output the built packages in JSON format.'
+)
+@click.argument('functions', nargs=-1)
+def list_cmd(source, json, functions):
+    _process(
+        source, functions,
+        lambda x: sys.stdout.write('' if json else (x.cfg.name + os.linesep)),
+        json
+    )
 
 # ====== build command ====== #
 
