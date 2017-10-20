@@ -71,7 +71,7 @@ class Package(object):
                     'docker', 'run',
                     '-v', os.path.realpath(t.name) + ':/requirements.txt',
                     '-v', os.path.realpath(self.bundle_folder) + ':/bundle',
-                    '-it', '--rm', 'python:3.6.3',
+                    '--rm', 'python:3.6.3',
                     'pip', 'install', '-r', '/requirements.txt', '-t', '/bundle'
                 ], stdout=output)
             else:
@@ -82,7 +82,7 @@ class Package(object):
             subprocess.run([
                 'docker', 'run',
                 '-v', os.path.realpath(self.bundle_folder) + ':/var/task',
-                '-it', 'lambci/lambda:python3.6',
+                'lambci/lambda:python3.6',
                 self.cfg.handler
             ])
 
