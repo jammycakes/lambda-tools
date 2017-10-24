@@ -2,10 +2,10 @@ import unittest
 
 from lambda_tools import util
 
-class A:
+class A(util.Serviceable):
     pass
 
-class B:
+class B(util.Serviceable):
     pass
 
 class TestServiceLocator(unittest.TestCase):
@@ -27,3 +27,22 @@ class TestServiceLocator(unittest.TestCase):
         a = sl.get(A)
         b = a.services[B]()
         self.assertIsInstance(b, A)
+
+    def test_locate_singleton(self):
+        sl = util.ServiceLocator()
+        sl.register(A, A, singleton=True)
+        a = sl.get(A)
+        b = sl.get(A)
+        self.assertEqual(a, b)
+
+    def test_locate_non_singleton(self):
+        sl = util.ServiceLocator()
+        a = sl.get(A)
+        b = sl.get(A)
+        self.assertNotEqual(a, b)
+
+    def test_locate_non_callable(self):
+        sl = util.ServiceLocator()
+        sl.register('Hello', 'World')
+        a = sl.get('Hello')
+        self.assertEqual('World', a)
