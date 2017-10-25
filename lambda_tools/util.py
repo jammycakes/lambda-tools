@@ -10,10 +10,6 @@ def assert_dict(data, name):
 
 # ====== Inversion of Control ====== #
 
-class Serviceable(object):
-    services = None
-
-
 class ServiceLocator(object):
 
     def __init__(self):
@@ -88,4 +84,8 @@ class ServiceLocator(object):
 
     def get(self, service, *args, **kwargs):
         return self[service](*args, **kwargs)
+
+
+class Serviceable(object):
+    services = ServiceLocator()
 

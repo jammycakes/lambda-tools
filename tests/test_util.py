@@ -8,6 +8,10 @@ class A(util.Serviceable):
 class B(util.Serviceable):
     pass
 
+class C(util.Serviceable):
+    def __init__(self):
+        self.a = self.services[A]()
+
 class TestServiceLocator(unittest.TestCase):
 
     def test_locate_A(self):
@@ -46,3 +50,8 @@ class TestServiceLocator(unittest.TestCase):
         sl.register('Hello', 'World')
         a = sl.get('Hello')
         self.assertEqual('World', a)
+
+    def test_constructor(self):
+        sl = util.ServiceLocator()
+        a = sl.get(C)
+        self.assertIsInstance(a.a, A)
