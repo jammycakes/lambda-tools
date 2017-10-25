@@ -27,9 +27,14 @@ class ServiceLocator(object):
             if not callable(provider):
                 return provider
             else:
-                result = provider(*args, **kwargs)
-                if isinstance(result, Serviceable):
+                if issubclass(provider, Serviceable):
+                    result = provider.__new__(provider, *args, **kwargs)
                     result.services = self
+                    provider.__init__(result, *args, **kwargs)
+                else:
+                    result = provider(*args, **kwargs)
+                    if isinstance(result, Serviceable):
+                        result.services = self
                 return result
 
         return instantiate
