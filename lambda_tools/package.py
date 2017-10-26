@@ -36,7 +36,7 @@ class Package(object):
         """
         self.cfg = cfg
         self.bundle_folder = bundle_folder
-        self.use_docker = use_docker and not not shutil.which('docker')
+        self.use_docker = use_docker and bool(shutil.which('docker'))
         self.silent = silent
 
     def create_bundle_folder(self):
