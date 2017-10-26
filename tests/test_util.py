@@ -55,3 +55,9 @@ class TestServiceLocator(unittest.TestCase):
         sl = util.ServiceLocator()
         a = sl.get(C)
         self.assertIsInstance(a.a, A)
+
+    def test_lambda_provider(self):
+        sl = util.ServiceLocator()
+        sl.register('Hello', lambda *args, **kwargs: 'World')
+        a = sl.get('Hello')
+        self.assertEqual('World', a)

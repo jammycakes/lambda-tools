@@ -2,6 +2,8 @@
 Miscellaneous utility files
 """
 
+import inspect
+
 def assert_dict(data, name):
     if isinstance(data, dict):
         return data
@@ -23,7 +25,7 @@ class ServiceLocator(object):
             if not callable(provider):
                 return provider
             else:
-                if issubclass(provider, Serviceable):
+                if inspect.isclass(provider) and issubclass(provider, Serviceable):
                     result = provider.__new__(provider, *args, **kwargs)
                     result.services = self
                     provider.__init__(result, *args, **kwargs)
