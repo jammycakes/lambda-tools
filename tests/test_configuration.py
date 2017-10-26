@@ -16,7 +16,7 @@ class TestConfigurations(unittest.TestCase):
 
     def get_loader(self, filename):
         filename = os.path.abspath(os.path.join(__file__, '..', filename))
-        return configuration.Loader(filename, account_id=1234567890)
+        return configuration.Loader(filename)
 
     def test_bad_configurations(self):
         loader = self.get_loader('aws-lambda.bad.yml')

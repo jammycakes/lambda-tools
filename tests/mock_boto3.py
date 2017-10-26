@@ -5,12 +5,17 @@ This module defines some mock objects that we can use in place of boto3 calls.
 MOCK_ACCOUNT_ID = 123456789012
 MOCK_AWS_REGION = "eu-west-1"
 
-class MockEc2Session(object):
-
-    def __init__(self):
-        self.region_name = MOCK_AWS_REGION
+mock_clients = {}
 
 
+def client(name):
+    def register(cls):
+        mock_clients[name.lower()] = cls
+        return cls
+    return register
+
+
+@client('ec2')
 class MockEc2Client(object):
 
     def describe_vpcs(self, *args, **kwargs):
@@ -54,6 +59,7 @@ class MockEc2Client(object):
             ]
         }
 
+@client('kms')
 class MockKmsClient(object):
 
     def describe_key(self, *args, **kwargs):
@@ -67,7 +73,7 @@ class MockKmsClient(object):
         }
 
 
-
+@client('lambda')
 class MockLambdaClient(object):
 
     def create_function(self, *args, **kwargs):
@@ -95,3 +101,9 @@ class MockLambdaClient(object):
 
     def get_function_configuration(*args, **kwargs):
         pass
+
+class MockSession(object):
+
+    def client(service, *args, **kwargs):
+        c = mock_clients.get(service)
+        return c(*args, **kwargs) if c else None

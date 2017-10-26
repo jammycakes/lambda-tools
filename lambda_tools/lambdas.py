@@ -54,9 +54,10 @@ class Lambda(util.Serviceable):
         self.cfg = cfg
         self.built = False
         self.arn = None
+        self.account_id = self.services.get('aws-account-id')
 
     def _get_aws_client(self, service_name):
-        return self.cfg.loader.client(service_name, self.cfg.region)
+        return self.services.get(boto3.Session).client(service_name, self.cfg.region)
 
     def _get_role_arn(self):
         """
@@ -65,7 +66,7 @@ class Lambda(util.Serviceable):
         if self.cfg.role.startswith('arn:aws:iam'):
             return self.cfg.role
         else:
-            return 'arn:aws:iam::{0}:role/{1}'.format(self.cfg.loader.account_id, self.cfg.role)
+            return 'arn:aws:iam::{0}:role/{1}'.format(self.account_id, self.cfg.role)
 
 
     def _get_vpcs(self):
@@ -149,15 +150,15 @@ class Lambda(util.Serviceable):
 
         def get_sns_arn(topic):
             return "arn:aws:sns:{0}:{1}:{2}".format(
-                self.cfg.loader.session.region_name,
-                self.cfg.loader.account_id,
+                self.services.get(boto3.Session).region_name,
+                self.account_id,
                 topic
             )
 
         def get_sqs_arn(queue):
             return "arn:aws:sqs:{0}:{1}:{2}".format(
-                self.cfg.loader.session.region_name,
-                self.cfg.loader.account_id,
+                self.services.get(boto3.Session).region_name,
+                self.account_id,
                 queue
             )
 
@@ -329,5 +330,13 @@ def load(filename, functions=None, account_id=None):
     """
     services = util.ServiceLocator()
     services.register(configuration.Loader, configuration.Loader, singleton=True)
-    loader = services.get(configuration.Loader, filename, account_id=account_id)
+    services.register(
+        'aws-account-id',
+        lambda *a, **k: int(
+            account_id or
+            services.get(boto3.Session).client('sts').get_caller_identity().get('Account')
+        ),
+        singleton=True
+    )
+    loader = services.get(configuration.Loader, filename)
     return [services.get(Lambda, cfg) for cfg in loader.load(functions)]

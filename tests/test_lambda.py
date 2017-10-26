@@ -1,39 +1,46 @@
 import os.path
 import unittest
 
+import boto3
+
 import mock_boto3
 from lambda_tools import configuration
 from lambda_tools import lambdas
+from lambda_tools.util import ServiceLocator
 
 
-class MockLoader(configuration.Loader):
+class MockBoto3(configuration.Loader):
 
-    def __init__(self, file, account_id=None, session=None):
-        super().__init__(
-            file,
-            mock_boto3.MOCK_ACCOUNT_ID,
-            session or mock_boto3.MockEc2Session()
-        )
+    def __init__(self):
         self.services = {
             "ec2": mock_boto3.MockEc2Client(),
             "kms": mock_boto3.MockKmsClient(),
             "lambda": mock_boto3.MockLambdaClient(),
         }
+        self.region_name = mock_boto3.MOCK_AWS_REGION
 
-    def client(self, service_name, region_name=None):
-        return self.services[service_name]
+    def client(self, service_name, region_name=None, *args, **kwargs):
+        return self.services[service_name.lower()]
 
 
 class TestLambda(unittest.TestCase):
 
+    def setUp(self):
+        self.services = ServiceLocator()
+        self.services.register(configuration.Loader, configuration.Loader, singleton=True)
+        self.services.register('aws-account-id', mock_boto3.MOCK_ACCOUNT_ID)
+        self.services.register(boto3.Session, MockBoto3, singleton=True)
+
+
     def get_loader(self, filename):
         filename = os.path.abspath(os.path.join(__file__, '..', filename))
-        return MockLoader(filename)
+        return self.services.get(configuration.Loader, filename)
+
 
     def get_lambda(self, filename, configuration_name):
         loader = self.get_loader(filename)
         cfg = list(loader.load([configuration_name]))
-        return lambdas.Lambda(cfg[0])
+        return self.services[lambdas.Lambda](cfg[0])
 
 
     def test_lambda_from_0_configuration(self):
@@ -41,7 +48,7 @@ class TestLambda(unittest.TestCase):
         loader = self.get_loader('aws-lambda.0.0-0.1.yml')
         cfg = loader.load(None)
         for item in cfg:
-            l = lambdas.Lambda(item)
+            l = self.services.get(lambdas.Lambda, item)
             actual = l._get_function_configuration_data()
             expected = {
                 'FunctionName': item.name,

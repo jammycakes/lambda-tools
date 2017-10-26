@@ -21,11 +21,10 @@ class Loader(util.Serviceable):
     It does not contain any logic.
     """
 
-    def __init__(self, file, account_id=None, session=None):
+    def __init__(self, file):
         self.file = os.path.abspath(os.path.expanduser(file))
         self.folder = os.path.dirname(self.file)
-        self.session = session or self.services.get(boto3.Session)
-        self.account_id = account_id
+        self.session = self.services.get(boto3.Session)
         self._clients = {}
 
     def client(self, service_name, region_name=None):
@@ -56,7 +55,6 @@ class Loader(util.Serviceable):
         return (Function(self, key, **data[key]) for key in keys)
 
     def load(self, functions):
-        self.account_id = int(self.account_id or self.client('sts').get_caller_identity().get('Account'))
         data = self.get_data()
         return self.get_configurations(data, functions)
 
@@ -94,10 +92,8 @@ class Function(util.Serviceable):
             log.warn('Setting: "{0}" is deprecated: use "{1}" instead.'.format(setting, should_use))
             log.warn('This setting will be removed in a future version of lambda_tools.')
 
-        self.loader = loader
-
         self.name = name
-        self.source = self.loader.abspath(source)
+        self.source = loader.abspath(source)
         self.role = role
         self.handler = handler
         self.region = region
@@ -172,8 +168,8 @@ class Function(util.Serviceable):
             self.tracing_config = None
 
         self.tags = tags
-        self.requirements = self.loader.abspath(requirements) if requirements else None
-        self.package = self.loader.abspath(package) if package else self.source + '.zip'
+        self.requirements = loader.abspath(requirements) if requirements else None
+        self.package = loader.abspath(package) if package else self.source + '.zip'
 
         # Post-processing
 
