@@ -4,6 +4,9 @@ Functionality to instantiate and upload the lambda in AWS.
 
 from . import configuration
 from . import package
+from . import util
+
+import boto3
 
 class LambdaError(Exception):
     pass
@@ -42,7 +45,7 @@ def _lookup_ids(items, **lookups):
     return result
 
 
-class Lambda(object):
+class Lambda(util.Serviceable):
     """
     Encapsulates a lambda function, to be uploaded to AWS
     """
@@ -324,5 +327,7 @@ def load(filename, functions=None, account_id=None):
     @account_id
         The AWS account ID.
     """
-    loader = configuration.Loader(filename, account_id=account_id)
-    return [Lambda(cfg) for cfg in loader.load(functions)]
+    services = util.ServiceLocator()
+    services.register(configuration.Loader, configuration.Loader, singleton=True)
+    loader = services.get(configuration.Loader, filename, account_id=account_id)
+    return [services.get(Lambda, cfg) for cfg in loader.load(functions)]

@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 
 # ====== Loader class ====== #
 
-class Loader(object):
+class Loader(util.Serviceable):
     """
     This class loads in the lambda configuration. It provides some options to
     fetch the AWS account ID, resolve file paths, and create boto3 clients.
@@ -24,7 +24,7 @@ class Loader(object):
     def __init__(self, file, account_id=None, session=None):
         self.file = os.path.abspath(os.path.expanduser(file))
         self.folder = os.path.dirname(self.file)
-        self.session = session or boto3.session.Session()
+        self.session = session or self.services.get(boto3.Session)
         self.account_id = account_id
         self._clients = {}
 
@@ -63,7 +63,7 @@ class Loader(object):
 
 # ====== Function class ====== #
 
-class Function(object):
+class Function(util.Serviceable):
     """
     Encapsulates a lambda function, to be uploaded to AWS
     """
