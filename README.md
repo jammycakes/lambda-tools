@@ -54,6 +54,10 @@ hello_world:
   requirements: requirements.txt
   # This is where the built package will be saved before being uploaded to AWS.
   package: build/hello_world.zip
+
+  # Build options
+  use_docker: false
+  compile_dependencies: false
 ```
 
 You can define multiple lambdas in a single file. The properties are as follows:
@@ -78,6 +82,7 @@ You can define multiple lambdas in a single file. The properties are as follows:
 | `timeout`         | 3               | The timeout for the function to run, in seconds. |
 | `tracing`         |                 | The tracing settings for your function. Should be set to either `PassThrough` or `Active`. |
 | `use_docker`      | `false`         | Build the lambda in a Docker container. |
+| `compile_dependencies` | `false`    | Compile the Python files in dependent packages into .pyc files. |
 | `vpc`             |                 | The name of the VPC into which the function should be launched. You don't need to specify this unless it can not be uniquely identified from the names of the security groups and subnets. |
 
 A few points worth noting here:
@@ -99,6 +104,12 @@ A few points worth noting here:
    uploading your lambda to AWS, change this setting to `true`. For more
    information see
    [this article](https://medium.freecodecamp.org/escaping-lambda-function-hell-using-docker-40b187ec1e48).
+ * By default, `.py` files in your dependencies are not compiled into `.pyc`
+   files. This may increase the startup time of your lambda function, especially
+   if the number of dependencies that you have specified is large, but it does
+   mean that the same build will produce exactly the same binary. This is
+   important, for example, if you are using `ltools` in conjunction with
+   Terraform, which looks for changes in your build output.
 
 Command line instructions
 -------------------------
