@@ -1,4 +1,4 @@
-.PHONY: test build release upload upload-test
+.PHONY: test build deps release upload upload-test
 
 VERSION = $(shell python3 -c "import lambda_tools;print(lambda_tools.VERSION)")
 
@@ -7,6 +7,9 @@ test:
 
 build:
 	python3 setup.py sdist
+
+deps:
+	pip install -U -r requirements.txt
 
 release:
 	git tag $(VERSION) -m "Tag version $(VERSION)"
