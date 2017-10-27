@@ -73,6 +73,21 @@ class Package(object):
                 ], stdout=output)
             else:
                 pip.main(['install', '-r', t.name, '-t', self.bundle_folder])
+        #
+        # pip doesn't preserve timestamps when installing files.
+        # I think it's supposed to, but it doesn't seem to work.
+        # Therefore we'll set the timestamps of all downloaded files to
+        # the timestamp of the requirements.txt file.
+        #
+        times = (
+            os.path.getatime(self.cfg.requirements),
+            os.path.getmtime(self.cfg.requirements)
+        )
+        for dirname, subdirs, files in os.walk(self.bundle_folder):
+            for filename in files + subdirs:
+                filepath = os.path.join(dirname, filename)
+                os.utime(filepath, times)
+
 
     def exec_lambda(self, test_data):
         if self.use_docker:
@@ -105,8 +120,8 @@ class Package(object):
         """
         self.create_bundle_folder()
         try:
-            self.copy_files()
             self.install_requirements()
+            self.copy_files()
             self.create_archive()
         finally:
             self.remove_bundle_folder()
