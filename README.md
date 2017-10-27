@@ -67,6 +67,7 @@ You can define multiple lambdas in a single file. The properties are as follows:
 | `handler`         | **Required.**   | The name of the Python module and function which will handle the lambda invocation. Given in the format `module.handler`. |
 | `role`            | **Required.**   | The name of the IAM role under which the function will run. |
 | `source`          | **Required.**   | The folder containing the function's source code. This is relative to the `aws-lambda.yml` file. |
+| `compile_dependencies` | `false`    | Compile the Python files in dependent packages into .pyc files. |
 | `dead_letter`     |                 | The ARN of the SQS queue or SNS topic used as a dead letter queue for failed lambda invocations. |
 | `description`     |                 | A short text description of the function. |
 | `environment`     |                 | Environment variables to be configured for the function. Any blank environment variables that you specify here will be taken from the environment passed to the `ltools` command. |
@@ -82,7 +83,6 @@ You can define multiple lambdas in a single file. The properties are as follows:
 | `timeout`         | 3               | The timeout for the function to run, in seconds. |
 | `tracing`         |                 | The tracing settings for your function. Should be set to either `PassThrough` or `Active`. |
 | `use_docker`      | `false`         | Build the lambda in a Docker container. |
-| `compile_dependencies` | `false`    | Compile the Python files in dependent packages into .pyc files. |
 | `vpc`             |                 | The name of the VPC into which the function should be launched. You don't need to specify this unless it can not be uniquely identified from the names of the security groups and subnets. |
 
 A few points worth noting here:
