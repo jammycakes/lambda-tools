@@ -70,3 +70,9 @@ def build(source, json, functions):
 )
 def deploy(source, json, functions):
     _process(source, functions, lambda x: x.deploy(silent=json), json)
+
+
+@main.command('version', help='Print the version number and exit.')
+def version():
+    from lambda_tools import VERSION
+    print(VERSION)

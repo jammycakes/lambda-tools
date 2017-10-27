@@ -221,6 +221,16 @@ to disambiguate them:
       - another-group
 ```
 
+### `use_docker`
+
+Build the lambda in a Docker container.
+
+You will normally not need to use Docker, unless you are building your lambda
+function on OSX or Windows **and** some of your dependencies are written partly
+in C. If you get "Invalid ELF header" errors in AWS after uploading your lambda
+to AWS, change this setting to `true`. For more information see
+[this article](https://medium.freecodecamp.org/escaping-lambda-function-hell-using-docker-40b187ec1e48)
+
 Command line instructions
 -------------------------
 

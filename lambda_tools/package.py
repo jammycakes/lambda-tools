@@ -19,7 +19,7 @@ import tempfile
 
 class Package(object):
 
-    def __init__(self, cfg, bundle_folder=None, use_docker=True, silent=True):
+    def __init__(self, cfg, bundle_folder=None, silent=True):
         """
         Creates an instance of the Package class.
 
@@ -28,15 +28,12 @@ class Package(object):
         @param bundle_folder
             The folder into which the bundle is to be created.
             If none specified, a temporary folder will be created.
-        @param use_docker
-            `True` to use Docker to bundle and test the lambda.
-            `False` to bundle and test the lambda locally.
         @param silent
             `True` to suppress output to the console. Otherwise `False`.
         """
         self.cfg = cfg
         self.bundle_folder = bundle_folder
-        self.use_docker = use_docker and bool(shutil.which('docker'))
+        self.use_docker = self.cfg.use_docker and bool(shutil.which('docker'))
         self.silent = silent
 
     def create_bundle_folder(self):

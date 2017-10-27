@@ -86,7 +86,8 @@ class Function(util.Serviceable):
         vpc_config=None,
         tracing_config=None,
         dead_letter_config=None,
-        memory_size=128
+        memory_size=128,
+        use_docker=False
     ):
         def warn(setting, should_use):
             log.warn('Setting: "{0}" is deprecated: use "{1}" instead.'.format(setting, should_use))
@@ -170,8 +171,7 @@ class Function(util.Serviceable):
         self.tags = tags
         self.requirements = loader.abspath(requirements) if requirements else None
         self.package = loader.abspath(package) if package else self.source + '.zip'
-
-        # Post-processing
+        self.use_docker = use_docker
 
         # use environment variables when appropriate
         if self.environment:

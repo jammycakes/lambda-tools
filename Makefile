@@ -1,6 +1,6 @@
 .PHONY: test build release upload upload-test
 
-VERSION = $(shell cat .version)
+VERSION = $(shell python3 -c "import lambda_tools;print(lambda_tools.VERSION)")
 
 test:
 	python3 setup.py test -a tests
