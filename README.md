@@ -118,6 +118,10 @@ Command line instructions
    `aws-lambda.yml` file in the current directory.
  * `ltools deploy`: deploys some or all of the lambda functions specified in
    the `aws-lambda.yml` file in the current directory.
+ * `ltools list`: lists the lambda functions defined in your `aws-lambda.yml`
+   file.
+ * `ltools version`: displays the version number and exits.
+
 
 
 [info-travis]:   https://travis-ci.org/jammycakes/lambda-tools
