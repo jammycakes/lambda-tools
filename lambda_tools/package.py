@@ -62,6 +62,7 @@ class Package(object):
                 s = re.sub(r'^-e\s+', '', s)
                 t.file.write(s + os.linesep)
             t.flush()
+            compile_arg = '--compile' if self.cfg.compile_dependencies else '--no-compile'
             if self.use_docker:
                 output = subprocess.DEVNULL if self.silent else None
                 subprocess.run([
@@ -69,10 +70,15 @@ class Package(object):
                     '-v', os.path.realpath(t.name) + ':/requirements.txt',
                     '-v', os.path.realpath(self.bundle_folder) + ':/bundle',
                     '--rm', 'python:3.6.3',
-                    'pip', 'install', '-r', '/requirements.txt', '-t', '/bundle'
+                    'pip', 'install',
+                    compile_arg, '-r', '/requirements.txt', '-t', '/bundle'
                 ], stdout=output)
             else:
-                pip.main(['install', '-r', t.name, '-t', self.bundle_folder])
+                pip.main([
+                    'install', compile_arg,
+                    '-r', t.name,
+                    '-t', self.bundle_folder
+                ])
         #
         # pip doesn't preserve timestamps when installing files.
         # I think it's supposed to, but it doesn't seem to work.

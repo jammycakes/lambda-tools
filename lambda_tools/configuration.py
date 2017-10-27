@@ -76,7 +76,8 @@ class Lambda(object):
         tags=None,
         requirements=None,
         package=None,
-        use_docker=False
+        use_docker=False,
+        compile_dependencies=False
     ):
         self.loader = loader
         self.name = name
@@ -99,6 +100,7 @@ class Lambda(object):
         self.requirements = self.loader.abspath(requirements) if requirements else None
         self.package = self.loader.abspath(package) if package else self.source + '.zip'
         self.use_docker = use_docker
+        self.compile_dependencies = compile_dependencies
 
         # Post-processing: use environment variables when appropriate
         if self.environment:
