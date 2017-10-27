@@ -77,6 +77,7 @@ You can define multiple lambdas in a single file. The properties are as follows:
 | `tags`            |                 | The tags to apply to the function. |
 | `timeout`         | 3               | The timeout for the function to run, in seconds. |
 | `tracing`         |                 | The tracing settings for your function. Should be set to either `PassThrough` or `Active`. |
+| `use_docker`      | `false`         | Build the lambda in a Docker container. |
 | `vpc`             |                 | The name of the VPC into which the function should be launched. You don't need to specify this unless it can not be uniquely identified from the names of the security groups and subnets. |
 
 A few points worth noting here:
@@ -92,6 +93,12 @@ A few points worth noting here:
     name. See [GitHub issue 3](https://github.com/jammycakes/lambda-tools/issues/3)
     for the latest status on this one.
  * All folder and file names are relative to your `aws-lambda.yml` file.
+ * You will normally not need to use Docker, unless you are building your
+   lambda function on OSX or Windows **and** some of your dependencies are
+   written partly in C. If you get "Invalid ELF header" errors in AWS after
+   uploading your lambda to AWS, change this setting to `true`. For more
+   information see
+   [this article](https://medium.freecodecamp.org/escaping-lambda-function-hell-using-docker-40b187ec1e48).
 
 Command line instructions
 -------------------------
