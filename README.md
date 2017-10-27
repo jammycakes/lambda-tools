@@ -231,6 +231,16 @@ in C. If you get "Invalid ELF header" errors in AWS after uploading your lambda
 to AWS, change this setting to `true`. For more information see
 [this article](https://medium.freecodecamp.org/escaping-lambda-function-hell-using-docker-40b187ec1e48)
 
+### `compile_dependencies`
+Compile the Python files in dependent packages into .pyc files.
+
+By default, `.py` files in your dependencies are not compiled into `.pyc`
+files. This may increase the startup time of your lambda function, especially
+if the number of dependencies that you have specified is large, but it does
+mean that the same build will produce exactly the same binary. This is
+important, for example, if you are using `ltools` in conjunction with
+Terraform, which looks for changes in your build output.
+
 Command line instructions
 -------------------------
 
@@ -238,6 +248,10 @@ Command line instructions
    `aws-lambda.yml` file in the current directory.
  * `ltools deploy`: deploys some or all of the lambda functions specified in
    the `aws-lambda.yml` file in the current directory.
+ * `ltools list`: lists the lambda functions defined in your `aws-lambda.yml`
+   file.
+ * `ltools version`: displays the version number and exits.
+
 
 
 [info-travis]:   https://travis-ci.org/jammycakes/lambda-tools
