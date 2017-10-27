@@ -5,13 +5,14 @@ import sys
 from setuptools import setup
 from setuptools.command.test import test as TestCommand
 
+import lambda_tools
+
 requirements = pip.req.parse_requirements(
     'requirements.txt', session=pip.download.PipSession(),
 )
 pip_requirements = [str(r.req) for r in requirements]
 
-with open(os.path.join(os.path.dirname(__file__), '.version')) as f:
-    version = f.read()
+version = lambda_tools.VERSION
 
 
 class PyTest(TestCommand):
