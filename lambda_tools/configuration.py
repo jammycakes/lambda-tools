@@ -6,6 +6,7 @@ the lambda configurations.
 import logging
 import os.path
 import boto3
+import factoryfactory
 import yaml
 from . import util
 
@@ -13,7 +14,7 @@ log = logging.getLogger(__name__)
 
 # ====== Loader class ====== #
 
-class Loader(util.Serviceable):
+class Loader(factoryfactory.Serviceable):
     """
     This class loads in the lambda configuration. It provides some options to
     fetch the AWS account ID, resolve file paths, and create boto3 clients.
@@ -61,7 +62,7 @@ class Loader(util.Serviceable):
 
 # ====== Function class ====== #
 
-class Function(util.Serviceable):
+class Function(factoryfactory.Serviceable):
     """
     Encapsulates a lambda function, to be uploaded to AWS
     """

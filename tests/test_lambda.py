@@ -2,11 +2,11 @@ import os.path
 import unittest
 
 import boto3
+from factoryfactory import ServiceLocator
 
 import mock_boto3
 from lambda_tools import configuration
 from lambda_tools import lambdas
-from lambda_tools.util import ServiceLocator
 
 
 class MockBoto3(configuration.Loader):
