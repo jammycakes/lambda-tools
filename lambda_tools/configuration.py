@@ -48,7 +48,6 @@ class BuildConfig:
     compile_dependencies = mapper.BoolField(default=False)
     package = mapper.StringField()
 
-
 class DeployConfig:
     handler = mapper.StringField(required=True)
     role = mapper.StringField(required=True)
@@ -78,11 +77,9 @@ class DeployConfig:
     tracing_config = mapper.ClassField(TracingConfig)
     vpc_config = mapper.ClassField(VpcConfig)
 
-
 class FunctionConfig:
     build = mapper.ClassField(BuildConfig, required=True)
     deploy = mapper.ClassField(DeployConfig)
-
 
 class GlobalConfig:
     version = mapper.IntField(required=True)
