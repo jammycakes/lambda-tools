@@ -24,6 +24,8 @@ version: 1
 
 functions:
   hello_world:
+    runtime: python3.6
+
     # The build section is required
     build:
       # source is required
@@ -49,7 +51,6 @@ functions:
       memory_size: 128
       package: build/hello_world.zip
       region: eu-west-1
-      runtime: python3.6
       timeout: 3
 
       dead_letter_config:
@@ -92,10 +93,19 @@ each entry within this section gives the name of your function.
 
 Each function contains two sub-sections.
 
+### The `runtime` parameter
+
+The `runtime` parameter is optional and defaults to `python3.6`. It indicates
+which language runtime is used by the function.
+
+  * Note that while you may specify any language supported by AWS, only
+    `python3.6` (the default) is currently fully supported by lambda_tools.
+    Support for other AWS-supported runtimes is planned.
+
 ### The `build` section
 
-The `build` section is required. It tells ltools where to find the source files
-for your lambda and how to build it. The parameters are as follows:
+The `build` section is required. It tells `ltools` where to find the source
+files for your lambda and how to build it. The parameters are as follows:
 
  * `source` **(Required)**: The folder containing your function's source code.
     This is specified relative to the `aws-lambda.yml` file.
@@ -151,10 +161,6 @@ The parameters are as follows:
  * `region`: The AWS region into which your function is to be deployed.
     * If not specified, it will be taken from either the environment variables
       or the configuration information that you have set using `aws configure`.
-
- * `runtime`: The language runtime used by the function. *Default: python3.6*
-    * Note that while you may specify any language supported by AWS, only
-    `python3.6` (the default) is currently fully supported by lambda_tools.
 
  * `timeout`: The maximum time, in seconds, that your function is allowed to run
     before being terminated. *Default: 3 seconds*.
