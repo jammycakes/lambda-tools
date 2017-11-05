@@ -22,6 +22,10 @@ class TestSchema(unittest.TestCase):
     def test_functions(self):
         self.assertEqual(1, len(self.config.functions))
 
+    def test_runtime(self):
+        self.assertEqual(self.func.runtime, 'python3.6')
+
+
     def test_build(self):
         build = self.func.build
         self.assertEqual('src/hello_world', build.source)
@@ -35,7 +39,6 @@ class TestSchema(unittest.TestCase):
         deploy = self.func.deploy
         self.assertEqual(deploy.description, 'A basic Hello World handler')
         self.assertEqual(deploy.region, 'eu-west-1')
-        self.assertEqual(deploy.runtime, 'python3.6')
         self.assertEqual(deploy.handler, 'hello.handler')
         self.assertEqual(deploy.memory_size, 128)
         self.assertEqual(deploy.timeout, 60)

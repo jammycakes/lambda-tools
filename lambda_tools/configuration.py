@@ -55,6 +55,16 @@ class DeployConfig:
     description = mapper.StringField(default='')
     memory_size = mapper.IntField(default=128)
     region = mapper.StringField()
+    timeout = mapper.IntField(default=3)
+
+    dead_letter_config = mapper.ClassField(DeadLetterConfig)
+    environment = mapper.ClassField(EnvironmentConfig)
+    kms_key = mapper.ClassField(KmsKeyConfig)
+    tags = mapper.DictField(mapper.StringField(nullable=True))
+    tracing_config = mapper.ClassField(TracingConfig)
+    vpc_config = mapper.ClassField(VpcConfig)
+
+class FunctionConfig:
     runtime = mapper.ChoiceField(
         choices=[
             'nodejs',
@@ -68,16 +78,6 @@ class DeployConfig:
         ],
         default='python3.6'
     )
-    timeout = mapper.IntField(default=3)
-
-    dead_letter_config = mapper.ClassField(DeadLetterConfig)
-    environment = mapper.ClassField(EnvironmentConfig)
-    kms_key = mapper.ClassField(KmsKeyConfig)
-    tags = mapper.DictField(mapper.StringField(nullable=True))
-    tracing_config = mapper.ClassField(TracingConfig)
-    vpc_config = mapper.ClassField(VpcConfig)
-
-class FunctionConfig:
     build = mapper.ClassField(BuildConfig, required=True)
     deploy = mapper.ClassField(DeployConfig)
 
@@ -116,7 +116,7 @@ def upgrade_0_to_1(data):
     def get_deploy_block(func):
         result = copy_fields(func,
             'handler', 'role',
-            'description', 'region', 'runtime', 'tags', 'timeout',
+            'description', 'region', 'tags', 'timeout',
             memory_size='memory'
         )
         if 'dead_letter' in func:
@@ -151,10 +151,13 @@ def upgrade_0_to_1(data):
         return result
 
     def transform_function(func):
-        return {
+        result = {
             'build': get_build_block(func),
             'deploy': get_deploy_block(func)
         }
+        if 'runtime' in func:
+            result['runtime'] = func['runtime']
+        return result
 
     if isinstance(data.get('version'), int):
         return data

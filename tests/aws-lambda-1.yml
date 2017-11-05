@@ -4,6 +4,7 @@ version: 1
 
 functions:
   test-0.1:
+    runtime: python3.6
     build:
       source: src/hello_world
       requirements:
@@ -15,7 +16,6 @@ functions:
     deploy:
       description: A basic Hello World handler
       region: eu-west-1
-      runtime: python3.6
       handler: hello.handler
       memory_size: 128
       timeout: 60
