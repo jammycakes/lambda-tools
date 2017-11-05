@@ -3,14 +3,106 @@ A set of classes and functions to parse the  `aws-lambda.yml` file and load in
 the lambda configurations.
 """
 
+from . import mapper
+
+class DeadLetterTargetConfig:
+    sns = mapper.StringField()
+    sqs = mapper.StringField()
+
+class DeadLetterConfig:
+    target = mapper.ClassField(DeadLetterTargetConfig)
+    target_arn = mapper.StringField()
+
+class EnvironmentConfig:
+    variables = mapper.DictField(mapper.StringField(nullable=True), required=True)
+
+class KmsKeyConfig:
+    name = mapper.StringField()
+    arn = mapper.StringField()
+
+class TracingConfig:
+    mode = mapper.ChoiceField(choices=['PassThrough', 'Active'], required=True)
+
+class NameOrIdConfig:
+    id = mapper.StringField()
+    name = mapper.StringField()
+
+class VpcConfig:
+    name = mapper.StringField()
+    subnets = mapper.ListField(
+        mapper.ClassField(NameOrIdConfig, default_field='name'),
+        required=True
+    )
+    security_groups = mapper.ListField(
+        mapper.ClassField(NameOrIdConfig, default_field='name'),
+        required=True
+    )
+
+class RequirementConfig:
+    file = mapper.StringField()
+
+class BuildConfig:
+    source = mapper.StringField(required=True)
+    requirements = mapper.ListField(mapper.ClassField(RequirementConfig))
+    use_docker = mapper.BoolField(default=False)
+    compile_dependencies = mapper.BoolField(default=False)
+    package = mapper.StringField()
+
+
+class DeployConfig:
+    handler = mapper.StringField(required=True)
+    role = mapper.StringField(required=True)
+
+    description = mapper.StringField(default='')
+    memory_size = mapper.IntField(default=128)
+    region = mapper.StringField()
+    runtime = mapper.ChoiceField(
+        choices=[
+            'nodejs',
+            'nodejs4.3',
+            'nodejs6.10',
+            'java8',
+            'python2.7',
+            'python3.6',
+            'dotnetcore1.0',
+            'nodejs4.3-edge'
+        ],
+        default='python3.6'
+    )
+    timeout = mapper.IntField(default=3)
+
+    dead_letter_config = mapper.ClassField(DeadLetterConfig)
+    environment = mapper.ClassField(EnvironmentConfig)
+    kms_key = mapper.ClassField(KmsKeyConfig)
+    tags = mapper.DictField(mapper.StringField(nullable=True))
+    tracing_config = mapper.ClassField(TracingConfig)
+    vpc_config = mapper.ClassField(VpcConfig)
+
+
+class FunctionConfig:
+    build = mapper.ClassField(BuildConfig, required=True)
+    deploy = mapper.ClassField(DeployConfig)
+
+
+class GlobalConfig:
+    version = mapper.IntField(required=True)
+    functions = mapper.DictField(mapper.ClassField(FunctionConfig), required=True)
+
+
+# ====== VERSION 0.0.x STUFF ====== #
+
+# To be replaced once the FunctionConfig-based settings are up and running.
+
 import logging
 import os.path
 import boto3
 import factoryfactory
 import yaml
+
 from . import util
 
 log = logging.getLogger(__name__)
+
 
 # ====== Loader class ====== #
 
