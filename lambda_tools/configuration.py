@@ -89,6 +89,89 @@ class GlobalConfig:
     functions = mapper.DictField(mapper.ClassField(FunctionConfig), required=True)
 
 
+def upgrade_0_to_1(data):
+
+    def copy_fields(func, *fields, **renamed_fields):
+        result = {}
+        for field in fields:
+            if field in func:
+                result[field] = func[field]
+
+        for target in renamed_fields:
+            source = renamed_fields[target]
+            if source in func:
+                result[target] = func[source]
+            else:
+                print(source + ' not found')
+
+        return result
+
+    def get_build_block(func):
+        result = copy_fields(func,
+            'source', 'compile_dependencies', 'package', 'use_docker'
+        )
+        if 'requirements' in func:
+            result['requirements'] = [
+                { 'file': func['requirements'] }
+            ]
+        return result
+
+    def get_deploy_block(func):
+        result = copy_fields(func,
+            'handler', 'role',
+            'description', 'region', 'runtime', 'tags', 'timeout',
+            memory_size='memory'
+        )
+        if 'dead_letter' in func:
+            result['dead_letter_config'] = {
+                'target_arn': func['dead_letter']
+            }
+        if 'environment' in func:
+            result['environment'] = {
+                'variables': func['environment']
+            }
+        if 'kms_key' in func:
+            result['kms_key'] = {
+                'name': func['kms_key']
+            }
+        if 'security_groups' in func:
+            result['vpc_config'] = {
+                'security_groups': func['security_groups']
+            }
+        if 'subnets' in func:
+            if not 'vpc_config' in result:
+                result['vpc_config'] = {}
+            result['vpc_config']['subnets'] = func['subnets']
+        if 'tracing' in func:
+            result['tracing_config'] = {
+                'mode': func['tracing']
+            }
+        if 'vpc' in func:
+            if not 'vpc_config' in result:
+                result['vpc_config'] = {}
+            result['vpc_config']['name'] = func['vpc']
+
+        return result
+
+    def transform_function(func):
+        return {
+            'build': get_build_block(func),
+            'deploy': get_deploy_block(func)
+        }
+
+    if isinstance(data.get('version'), int):
+        return data
+
+    return {
+        'version': 1,
+        'functions': dict([(f, transform_function(data[f])) for f in data])
+    }
+
+
+def upgrade(data):
+    upgraded = upgrade_0_to_1(data)
+    return upgraded
+
 # ====== VERSION 0.0.x STUFF ====== #
 
 # To be replaced once the FunctionConfig-based settings are up and running.

@@ -4,12 +4,15 @@ import yaml
 from lambda_tools import configuration
 from lambda_tools import mapper
 
+def load_yaml(filename):
+    testfile = os.path.join(os.path.dirname(__file__), filename)
+    with open(testfile) as f:
+        return yaml.load(f)
+
 class TestSchema(unittest.TestCase):
 
     def setUp(self):
-        testfile = os.path.join(os.path.dirname(__file__), 'aws-lambda-1.yml')
-        with open(testfile) as f:
-            self.data = yaml.load(f)
+        self.data = load_yaml('aws-lambda-1.yml')
         self.config = mapper.parse(configuration.GlobalConfig, self.data)
         self.func = self.config.functions['test-0.1']
 
@@ -18,7 +21,6 @@ class TestSchema(unittest.TestCase):
 
     def test_functions(self):
         self.assertEqual(1, len(self.config.functions))
-        self.assertIn('test-0.1', self.config.functions)
 
     def test_build(self):
         build = self.func.build
@@ -67,3 +69,13 @@ class TestSchema(unittest.TestCase):
 
     def test_deploy_dead_letter_config(self):
         self.assertEqual('some-dead-letter-arn', self.func.deploy.dead_letter_config.target_arn)
+
+
+class TestUpgrade(TestSchema):
+
+    def setUp(self):
+        self.data = load_yaml('aws-lambda-0.yml')
+        self.data = configuration.upgrade(self.data)
+        print(self.data)
+        self.config = mapper.parse(configuration.GlobalConfig, self.data)
+        self.func = self.config.functions['test-0.0']
