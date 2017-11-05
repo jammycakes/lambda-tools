@@ -213,3 +213,14 @@ class TestListClassField(unittest.TestCase):
                 ]
             })
         )
+
+
+class ClassWithDefaultFieldEntity:
+    five = mapper.ClassField(ChoiceFieldEntity, default_field='name')
+
+
+class TestClassWithDefaultField(unittest.TestCase):
+
+    def test_default_field(self):
+        result = mapper.parse(ClassWithDefaultFieldEntity, { 'five': 'George' })
+        self.assertEqual(result.five.name, 'George')

@@ -122,13 +122,17 @@ class DictField(Field):
 
 class ClassField(Field):
 
-    def __init__(self, cls, **kwargs):
+    def __init__(self, cls, default_field=None, **kwargs):
         self.cls = cls
+        self.default_field = default_field
         Field.__init__(self, **kwargs)
 
     def parse(self, value, field_name):
         value = Field.parse(self, value, field_name)
-        return parse(self.cls, value, field_name)
+        if self.default_field and not isinstance(value, dict):
+            return parse(self.cls, { self.default_field: value }, field_name)
+        else:
+            return parse(self.cls, value, field_name)
 
 
 def parse(clz, data, field_name=None):
