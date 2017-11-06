@@ -3,6 +3,8 @@ A set of classes and functions to parse the  `aws-lambda.yml` file and load in
 the lambda configurations.
 """
 
+import os.path
+
 from . import mapper
 
 class DeadLetterTargetConfig:
@@ -47,6 +49,7 @@ class NameOrIdConfig:
         if bool(self.id) == bool(self.name):
             return 'You must specify eother id or name, but not both.'
 
+
 class VpcConfig:
     name = mapper.StringField()
     subnets = mapper.ListField(
@@ -58,8 +61,13 @@ class VpcConfig:
         required=True
     )
 
+
 class RequirementConfig:
     file = mapper.StringField()
+
+    def resolve(self, root):
+        self.file = os.path.join(root, self.file)
+
 
 class BuildConfig:
     source = mapper.StringField(required=True)
@@ -67,6 +75,19 @@ class BuildConfig:
     use_docker = mapper.BoolField(default=False)
     compile_dependencies = mapper.BoolField(default=False)
     package = mapper.StringField()
+
+    def resolve(self, root):
+        self.source = os.path.join(root, self.source)
+        if self.package:
+            self.package = os.path.join(root, self.package)
+        else:
+            self.package = self.source
+            if self.package.endswith(os.sep) or self.package.endswith(os.altsep):
+                self.package = self.package[:-1]
+            self.package += '.zip'
+        for requirement in self.requirements:
+            requirement.resolve(root)
+
 
 class DeployConfig:
     handler = mapper.StringField(required=True)
@@ -84,6 +105,7 @@ class DeployConfig:
     tracing_config = mapper.ClassField(TracingConfig)
     vpc_config = mapper.ClassField(VpcConfig)
 
+
 class FunctionConfig:
     runtime = mapper.ChoiceField(
         choices=[
@@ -100,6 +122,7 @@ class FunctionConfig:
     )
     build = mapper.ClassField(BuildConfig, required=True)
     deploy = mapper.ClassField(DeployConfig)
+
 
 class GlobalConfig:
     version = mapper.IntField(required=True)

@@ -33,31 +33,27 @@ class Package(factoryfactory.Serviceable):
         @param bundle_folder
             The temporary folder into which the packgage is to be created.
         """
-        self.base_dir = base_dir
+        self.base_dir = os.path.realpath(base_dir)
         self.runtime = cfg.runtime
         self.build = cfg.build
-        self.bundle_folder = bundle_folder
-        self.source = self.realpath(self.build.source)
-        if self.build.package:
-            self.package = self.realpath(self.build.package)
+        self.build.resolve(base_dir)
+        if bundle_folder:
+            self.bundle_folder = os.path.join(self.base_dir, bundle_folder)
         else:
-            self.package = self.source + '.zip'
-
-    def realpath(self, path):
-        return os.path.realpath(os.path.join(self.base_dir, path))
+            self.bundle_folder = None
 
     def create_bundle_folder(self):
         """
         Ensures that the bundle folder exists.
         """
-        self.bundle_folder = self.realpath(self.bundle_folder or tempfile.mkdtemp())
+        self.bundle_folder = self.bundle_folder or os.path.realpath(tempfile.mkdtemp())
         os.makedirs(self.bundle_folder, exist_ok=True)
 
     def copy_files(self):
         """
         Copies the files from the source folder into the bundle.
         """
-        dir_util.copy_tree(self.source, self.bundle_folder)
+        dir_util.copy_tree(self.build.source, self.bundle_folder)
 
 
     def install_requirement_file(self, requirement):
@@ -106,16 +102,16 @@ class Package(factoryfactory.Serviceable):
 
     def install_requirements(self):
         for requirement in self.build.requirements or []:
-            self.install_requirement_file(self.realpath(requirement.file))
+            self.install_requirement_file(requirement.file)
 
 
     def create_archive(self):
         """
         Creates the archive file.
         """
-        dirname = os.path.dirname(self.package)
+        dirname = os.path.dirname(self.build.package)
         os.makedirs(dirname, exist_ok=True)
-        base_name, fmt = os.path.splitext(self.package)
+        base_name, fmt = os.path.splitext(self.build.package)
         fmt = fmt.replace(os.path.extsep, '') or 'zip'
         shutil.make_archive(base_name, fmt, self.bundle_folder, './', True)
 
