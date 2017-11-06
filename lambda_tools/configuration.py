@@ -9,16 +9,32 @@ class DeadLetterTargetConfig:
     sns = mapper.StringField()
     sqs = mapper.StringField()
 
+    def validate(self):
+        if bool(self.sns) == bool(self.sqs):
+            return 'You must specify either sns or sqs, but not both.'
+
+
 class DeadLetterConfig:
     target = mapper.ClassField(DeadLetterTargetConfig)
     target_arn = mapper.StringField()
 
+    def validate(self):
+        if bool(self.target) == bool(self.target_arn):
+            return 'You must specify either target or target_arn, but not both.'
+
+
 class EnvironmentConfig:
     variables = mapper.DictField(mapper.StringField(nullable=True), required=True)
+
 
 class KmsKeyConfig:
     name = mapper.StringField()
     arn = mapper.StringField()
+
+    def validate(self):
+        if bool(self.name) == bool(self.arn):
+            return 'You must specify either name or arn, but not both.'
+
 
 class TracingConfig:
     mode = mapper.ChoiceField(choices=['PassThrough', 'Active'], required=True)
@@ -26,6 +42,10 @@ class TracingConfig:
 class NameOrIdConfig:
     id = mapper.StringField()
     name = mapper.StringField()
+
+    def validate(self):
+        if bool(self.id) == bool(self.name):
+            return 'You must specify eother id or name, but not both.'
 
 class VpcConfig:
     name = mapper.StringField()
@@ -171,6 +191,12 @@ def upgrade_0_to_1(data):
 def upgrade(data):
     upgraded = upgrade_0_to_1(data)
     return upgraded
+
+def load(filename):
+    with open(filename) as f:
+        data = yaml.load(f)
+        data = upgrade(data)
+        return mapper.parse(GlobalConfig, data)
 
 # ====== VERSION 0.0.x STUFF ====== #
 

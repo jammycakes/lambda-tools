@@ -135,6 +135,7 @@ class ClassField(Field):
             return parse(self.cls, value, field_name)
 
 
+
 def parse(clz, data, field_name=None):
 
     if not isinstance(clz, type):
@@ -155,6 +156,10 @@ def parse(clz, data, field_name=None):
             field = members[key]
             value = field.get_default(key)
             setattr(instance, key, value)
+        if hasattr(clz, 'validate') and callable(clz.validate) and not isinstance(clz.validate, Field):
+            msg = clz.validate(instance)
+            if msg:
+                raise MappingError(msg)
         return instance
     else:
         if field_name:
