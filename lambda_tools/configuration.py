@@ -206,9 +206,23 @@ class FunctionConfig:
     deploy = mapper.ClassField(DeployConfig)
 
 
-class GlobalConfig:
+class Configuration:
     version = mapper.IntField(required=True)
     functions = mapper.DictField(mapper.ClassField(FunctionConfig), required=True)
+    root = ''
+
+    def get_functions(self, names):
+        if not names:
+            return self.functions
+        nonexistent = set(names).difference(self.functions)
+        if nonexistent:
+            raise ValueError(
+                'Undefined functions: ' + ', '.join(nonexistent)
+            )
+        return dict([
+            (name, self.functions[name])
+            for name in names
+        ])
 
 
 def upgrade_0_to_1(data):
@@ -299,7 +313,9 @@ def load(filename):
     with open(filename) as f:
         data = yaml.load(f)
         data = upgrade(data)
-        return mapper.parse(GlobalConfig, data)
+        config = mapper.parse(Configuration, data)
+        config.root = os.path.dirname(filename)
+        return config
 
 # ====== VERSION 0.0.x STUFF ====== #
 

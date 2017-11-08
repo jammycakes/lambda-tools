@@ -18,13 +18,15 @@ from distutils import dir_util
 import factoryfactory
 import pip
 
+from . import configuration
+
 
 class Package(factoryfactory.Serviceable):
     """
     Creates a bundled package
     """
 
-    def __init__(self, cfg, base_dir, bundle_folder=None):
+    def __init__(self, cfg, bundle_folder=None):
         """
         @param cfg
             The FunctionConfig from which the package is to be built.
@@ -33,12 +35,12 @@ class Package(factoryfactory.Serviceable):
         @param bundle_folder
             The temporary folder into which the packgage is to be created.
         """
-        self.base_dir = os.path.realpath(base_dir)
+        self.root = self.services.get(configuration.Configuration).root
         self.runtime = cfg.runtime
         self.build = cfg.build
-        self.build.resolve(base_dir)
+        self.build.resolve(self.root)
         if bundle_folder:
-            self.bundle_folder = os.path.join(self.base_dir, bundle_folder)
+            self.bundle_folder = os.path.join(self.root, bundle_folder)
         else:
             self.bundle_folder = None
 
@@ -133,3 +135,17 @@ class Package(factoryfactory.Serviceable):
             self.create_archive()
         finally:
             self.remove_bundle_folder()
+
+
+class BuildCommand(factoryfactory.Serviceable):
+
+    def __init__(self, functions):
+        self.functions = functions
+
+    def run(self):
+        config = self.services.get(configuration.Configuration)
+        functions = config.get_functions(self.functions)
+        for name in functions:
+            funcdef = functions[name]
+            package = self.services.get(Package, funcdef)
+            package.create()

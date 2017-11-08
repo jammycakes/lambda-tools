@@ -1,7 +1,23 @@
 import click
 import json as j
 import os
+import os.path
 import sys
+
+import factoryfactory
+
+from . import configuration
+
+def bootstrap(lambda_file):
+    services = factoryfactory.ServiceLocator()
+    filename = os.path.realpath(lambda_file)
+    folder = os.path.dirname(filename)
+    config = configuration.load(filename)
+    services.register(configuration.Configuration, config, singleton=True)
+    return services
+
+
+# ====== Command line functions ====== #
 
 @click.group()
 def main():
@@ -47,12 +63,10 @@ def list_cmd(source, json, functions):
 @click.option('--source', '-s', default='aws-lambda.yml',
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
-@click.option('--json', '-j', is_flag=True,
-    help='Output the built packages in JSON format.'
-)
 @click.argument('functions', nargs=-1)
 def build(source, json, functions):
-    _process(source, functions, lambda x: x.build(silent=json), json)
+    from .build import BuildCommand
+    bootstrap(source).get(BuildCommand, functions).run()
 
 
 # ====== deploy command ====== #

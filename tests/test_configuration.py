@@ -17,7 +17,7 @@ class TestSchema(unittest.TestCase):
 
     def setUp(self):
         self.data = load_yaml('aws-lambda-1.yml')
-        self.config = mapper.parse(configuration.GlobalConfig, self.data)
+        self.config = mapper.parse(configuration.Configuration, self.data)
         self.func = self.config.functions['test-0.1']
 
     def test_version(self):
@@ -82,7 +82,7 @@ class TestBuildResolve(unittest.TestCase):
 
     def setUp(self):
         self.data = load_yaml('aws-lambda-1.yml')
-        self.config = mapper.parse(configuration.GlobalConfig, self.data)
+        self.config = mapper.parse(configuration.Configuration, self.data)
         self.func = self.config.functions['test-0.1']
         self.func.build.resolve('/home/test')
 
@@ -199,5 +199,5 @@ class TestUpgrade(TestSchema):
     def setUp(self):
         self.data = load_yaml('aws-lambda-0.yml')
         self.data = configuration.upgrade(self.data)
-        self.config = mapper.parse(configuration.GlobalConfig, self.data)
+        self.config = mapper.parse(configuration.Configuration, self.data)
         self.func = self.config.functions['test-0.0']
