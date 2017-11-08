@@ -18,6 +18,9 @@ def client(name):
 @client('ec2')
 class MockEc2Client(object):
 
+    def __init__(self, *args, **kwargs):
+        pass
+
     def describe_vpcs(self, *args, **kwargs):
         return {
             "Vpcs": [
@@ -62,6 +65,9 @@ class MockEc2Client(object):
 @client('kms')
 class MockKmsClient(object):
 
+    def __init__(self, *args, **kwargs):
+        pass
+
     def describe_key(self, *args, **kwargs):
         keyid = "12345678-dead-beef-face-cafe12345678"
         return {
@@ -75,6 +81,9 @@ class MockKmsClient(object):
 
 @client('lambda')
 class MockLambdaClient(object):
+
+    def __init__(self, *args, **kwargs):
+        pass
 
     def create_function(self, *args, **kwargs):
         result = kwargs.copy()
@@ -102,8 +111,28 @@ class MockLambdaClient(object):
     def get_function_configuration(*args, **kwargs):
         pass
 
+
+@client('sts')
+class MockStsClient(object):
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def get_caller_identity(self):
+        return {
+            "Account": MOCK_ACCOUNT_ID
+        }
+
 class MockSession(object):
 
-    def client(service, *args, **kwargs):
+    def __init__(self, region_name=None, *args, **kwargs):
+        self.region_name = region_name or MOCK_AWS_REGION
+
+    def client(self, service, region_name=None, *args, **kwargs):
         c = mock_clients.get(service)
-        return c(*args, **kwargs) if c else None
+        if c:
+            result = c(region_name=self.region_name, *args, **kwargs)
+            result.region_name = self.region_name or region_name
+            return result
+        else:
+            return None
