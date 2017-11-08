@@ -119,6 +119,12 @@ class DictField(Field):
         else:
             raise MappingError('Value "{0}" must be a dictionary.'.format(field_name))
 
+    def __getitem__(self, index):
+        """
+        Placeholder method to make it look like a dict to comfort pylint
+        """
+        return None
+
 
 class ClassField(Field):
 
