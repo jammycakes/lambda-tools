@@ -80,7 +80,6 @@ class Package(factoryfactory.Serviceable):
                     compile_arg, '-r', '/requirements.txt', '-t', '/bundle'
                 ])
             else:
-                print(t.name)
                 pip.main([
                     'install', compile_arg,
                     '-r', t.name,
