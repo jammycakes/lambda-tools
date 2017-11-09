@@ -24,36 +24,21 @@ def main():
     pass
 
 
-def _process(source, functions, action, json):
-    from .lambdas import load
-    lambdas = load(source, functions)
-    for l in lambdas:
-        action(l)
-    if json:
-        d = dict([[l.cfg.name, l.cfg.package] for l in lambdas])
-        print(j.dumps(d, separators=(',', ': '), indent=2))
-    if functions and not lambdas:
-        if not json:
-            print('None of the specified lambda definitions were found.')
-        sys.exit(1)
-
-
 @main.command('list',
     help='Lists the lambda functions in the definition file'
 )
 @click.option('--source', '-s', default='aws-lambda.yml',
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
-@click.option('--json', '-j', is_flag=True,
-    help='Output the built packages in JSON format.'
-)
 @click.argument('functions', nargs=-1)
-def list_cmd(source, json, functions):
-    _process(
-        source, functions,
-        lambda x: sys.stdout.write('' if json else (x.cfg.name + os.linesep)),
-        json
-    )
+def list_cmd(source, functions):
+    config = bootstrap(source).get(configuration.Configuration)
+    funcdefs = config.get_functions(functions)
+    for func in funcdefs.values():
+        func.build.resolve(config.root)
+    data = dict([(key, funcdefs[key].build.package) for key in funcdefs])
+    print(j.dumps(data, separators=(',', ': '), indent=2))
+
 
 # ====== build command ====== #
 
