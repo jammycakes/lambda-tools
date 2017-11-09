@@ -3,6 +3,7 @@ A set of classes and functions to parse the  `aws-lambda.yml` file and load in
 the lambda configurations.
 """
 
+import os
 import os.path
 
 from . import mapper
@@ -36,6 +37,10 @@ class DeadLetterConfig:
 class EnvironmentConfig:
     variables = mapper.DictField(mapper.StringField(nullable=True), required=True)
 
+    def resolve(self, environment):
+        for key in self.variables:
+            if self.variables[key] == None:
+                self.variables[key] = environment.get(key, '')
 
 class KmsKeyConfig:
     name = mapper.StringField()
@@ -101,10 +106,10 @@ class VpcConfig:
             })
 
         # Query EC2.
-        subnet_data = ec2.describe_subnets(filter)['Subnets']
+        subnet_data = ec2.describe_subnets(Filters=filter)['Subnets']
         filter[0]['Name'] = 'group-name'
         filter[0]['Values'] = list(sgroups)
-        sgroup_data = ec2.describe_security_groups(filter)['SecurityGroups']
+        sgroup_data = ec2.describe_security_groups(Filters=filter)['SecurityGroups']
 
         # Construct name -> id mappings
         subnet_map = dict([
@@ -186,6 +191,12 @@ class DeployConfig:
             self.kms_key.resolve(session.client('kms'))
         if self.vpc_config:
             self.vpc_config.resolve(session.client('ec2'))
+        # Forces the role name into ARN format.
+        if not self.role.startswith('arn:aws:iam'):
+            self.role = 'arn:aws:iam::{0}:role/{1}'.format(self.account_id, self.role)
+        # Passthrough of environment variables
+        if self.environment:
+            self.environment.resolve(services.get(os.environ))
 
 
 class FunctionConfig:
@@ -205,6 +216,7 @@ class FunctionConfig:
     build = mapper.ClassField(BuildConfig, required=True)
     deploy = mapper.ClassField(DeployConfig)
 
+    x = __builtins__
 
 class Configuration:
     version = mapper.IntField(required=True)

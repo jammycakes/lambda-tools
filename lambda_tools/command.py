@@ -64,7 +64,7 @@ def list_cmd(source, json, functions):
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
 @click.argument('functions', nargs=-1)
-def build(source, json, functions):
+def build(source, functions):
     from .build import BuildCommand
     bootstrap(source).get(BuildCommand, functions).run()
 
@@ -77,13 +77,11 @@ def build(source, json, functions):
 @click.option('--source', '-s', default='aws-lambda.yml',
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
-@click.option('--json', '-j', is_flag=True,
-    help='Output the built packages in JSON format.'
-)
 @click.argument('functions', nargs=-1
 )
-def deploy(source, json, functions):
-    _process(source, functions, lambda x: x.deploy(silent=json), json)
+def deploy(source, functions):
+    from .deploy import DeployCommand
+    bootstrap(source).get(DeployCommand, functions).run()
 
 
 @main.command('version', help='Print the version number and exit.')
