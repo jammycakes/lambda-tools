@@ -8,63 +8,69 @@ This involves:
  (c) Zip it all up
 """
 
-from distutils import dir_util
-import os
 import os.path
-import pip
 import re
 import shutil
 import subprocess
 import tempfile
+from distutils import dir_util
 
-class Package(object):
+import factoryfactory
+import pip
 
-    def __init__(self, cfg, bundle_folder=None, silent=True):
+from . import configuration
+
+
+class Package(factoryfactory.Serviceable):
+    """
+    Creates a bundled package
+    """
+
+    def __init__(self, cfg, bundle_folder=None):
         """
-        Creates an instance of the Package class.
-
         @param cfg
-            The configuration object for the lambda.
+            The FunctionConfig from which the package is to be built.
+        @param base_dir
+            The base directory relative to which paths are to be resolved.
         @param bundle_folder
-            The folder into which the bundle is to be created.
-            If none specified, a temporary folder will be created.
-        @param silent
-            `True` to suppress output to the console. Otherwise `False`.
+            The temporary folder into which the packgage is to be created.
         """
-        self.cfg = cfg
-        self.bundle_folder = bundle_folder
-        self.use_docker = self.cfg.use_docker and bool(shutil.which('docker'))
-        self.silent = silent
+        self.root = self.services.get(configuration.Configuration).root
+        self.runtime = cfg.runtime
+        self.build = cfg.build
+        self.build.resolve(self.root)
+        if bundle_folder:
+            self.bundle_folder = os.path.join(self.root, bundle_folder)
+        else:
+            self.bundle_folder = None
 
     def create_bundle_folder(self):
         """
         Ensures that the bundle folder exists.
         """
-        self.bundle_folder = os.path.realpath(self.bundle_folder or tempfile.mkdtemp())
+        self.bundle_folder = self.bundle_folder or os.path.realpath(tempfile.mkdtemp())
         os.makedirs(self.bundle_folder, exist_ok=True)
 
     def copy_files(self):
         """
         Copies the files from the source folder into the bundle.
         """
-        dir_util.copy_tree(self.cfg.source, self.bundle_folder)
+        dir_util.copy_tree(self.build.source, self.bundle_folder)
 
-    def install_requirements(self):
+
+    def install_requirement_file(self, requirement):
         """
         Installs the requirements specified in requirements.txt into the bundle.
         """
-        if not self.cfg.requirements:
-            return
-        with open(self.cfg.requirements) as f, \
-                tempfile.NamedTemporaryFile(mode='w+t') as t:
+        with open(requirement) as f, \
+            tempfile.NamedTemporaryFile(mode='w+t') as t:
             for line in f:
                 s = line.strip()
                 s = re.sub(r'^-e\s+', '', s)
                 t.file.write(s + os.linesep)
             t.flush()
-            compile_arg = '--compile' if self.cfg.compile_dependencies else '--no-compile'
-            if self.use_docker:
-                output = subprocess.DEVNULL if self.silent else None
+            compile_arg = '--compile' if self.build.compile_dependencies else '--no-compile'
+            if self.build.use_docker:
                 subprocess.run([
                     'docker', 'run',
                     '-v', os.path.realpath(t.name) + ':/requirements.txt',
@@ -72,7 +78,7 @@ class Package(object):
                     '--rm', 'python:3.6.3',
                     'pip', 'install',
                     compile_arg, '-r', '/requirements.txt', '-t', '/bundle'
-                ], stdout=output)
+                ])
             else:
                 pip.main([
                     'install', compile_arg,
@@ -86,8 +92,8 @@ class Package(object):
         # the timestamp of the requirements.txt file.
         #
         times = (
-            os.path.getatime(self.cfg.requirements),
-            os.path.getmtime(self.cfg.requirements)
+            os.path.getatime(requirement),
+            os.path.getmtime(requirement)
         )
         for dirname, subdirs, files in os.walk(self.bundle_folder):
             for filename in files + subdirs:
@@ -95,22 +101,18 @@ class Package(object):
                 os.utime(filepath, times)
 
 
-    def exec_lambda(self, test_data):
-        if self.use_docker:
-            subprocess.run([
-                'docker', 'run',
-                '-v', os.path.realpath(self.bundle_folder) + ':/var/task',
-                'lambci/lambda:python3.6',
-                self.cfg.handler
-            ])
+    def install_requirements(self):
+        for requirement in self.build.requirements or []:
+            self.install_requirement_file(requirement.file)
+
 
     def create_archive(self):
         """
         Creates the archive file.
         """
-        dirname = os.path.dirname(self.cfg.package)
+        dirname = os.path.dirname(self.build.package)
         os.makedirs(dirname, exist_ok=True)
-        base_name, fmt = os.path.splitext(self.cfg.package)
+        base_name, fmt = os.path.splitext(self.build.package)
         fmt = fmt.replace(os.path.extsep, '') or 'zip'
         shutil.make_archive(base_name, fmt, self.bundle_folder, './', True)
 
@@ -119,6 +121,7 @@ class Package(object):
         Removes the bundle folder.
         """
         shutil.rmtree(self.bundle_folder)
+        self.bundle_folder = None
 
     def create(self):
         """
@@ -131,3 +134,17 @@ class Package(object):
             self.create_archive()
         finally:
             self.remove_bundle_folder()
+
+
+class BuildCommand(factoryfactory.Serviceable):
+
+    def __init__(self, functions):
+        self.functions = functions
+
+    def run(self):
+        config = self.services.get(configuration.Configuration)
+        functions = config.get_functions(self.functions)
+        for name in functions:
+            funcdef = functions[name]
+            package = self.services.get(Package, funcdef)
+            package.create()

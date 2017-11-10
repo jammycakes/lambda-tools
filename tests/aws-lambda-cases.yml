@@ -1,0 +1,31 @@
+# ====== Dead letter configuration ====== #
+
+deadletter.by_arn:
+  handler: some.handler
+  role: some_role
+  source: some_source
+
+  dead_letter_config:
+    target_arn: dead_letter_arn
+
+
+deadletter.by_sns:
+  handler: some.handler
+  role: some_role
+  source: some_source
+
+  dead_letter_config:
+    target:
+      sns: topic-631
+
+
+deadletter.by_sqs:
+  handler: some.handler
+  role: some_role
+  source: some_source
+
+  dead_letter_config:
+    target:
+      sqs: queue-631
+
+

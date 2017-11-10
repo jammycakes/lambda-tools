@@ -1,0 +1,39 @@
+test-0.0:
+  description: A basic Hello World handler
+  region: eu-west-1
+  runtime: python3.6
+  handler: hello.handler
+  memory: 128
+  timeout: 60
+
+  # Role, VPC, subnets, security groups and KMS key are all specified by name.
+  role: service-role/NONTF-lambda
+  vpc: My VPC
+  subnets:
+    - Public subnet
+    - Private subnet
+  security_groups:
+    - allow_database
+  kms_key: aws/lambda
+
+  tags:
+    wibble: wobble
+  environment:
+    foo: baz
+    bar:
+
+  # tracing: PassThrough | Active
+  tracing: PassThrough
+  # dead_letter: [ARN of SQS queue or SNS topic]
+  dead_letter: some-dead-letter-arn
+
+  # Folder and file locations. All are relative to the .yml file.
+  # This is the source code for your lambda.
+  source: src/hello_world
+  # This is your requirements.txt file for any packages used by the lambda.
+  requirements: requirements.txt
+  # This is where the built package will be saved before being uploaded to AWS.
+  package: build/hello_world.zip
+
+  use_docker: False
+  compile_dependencies: False

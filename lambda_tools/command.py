@@ -1,25 +1,27 @@
 import click
 import json as j
 import os
+import os.path
 import sys
+
+import factoryfactory
+
+from . import configuration
+
+def bootstrap(lambda_file):
+    services = factoryfactory.ServiceLocator()
+    filename = os.path.realpath(lambda_file)
+    folder = os.path.dirname(filename)
+    config = configuration.load(filename)
+    services.register(configuration.Configuration, config, singleton=True)
+    return services
+
+
+# ====== Command line functions ====== #
 
 @click.group()
 def main():
     pass
-
-
-def _process(source, functions, action, json):
-    from .lambdas import load
-    lambdas = load(source, functions)
-    for l in lambdas:
-        action(l)
-    if json:
-        d = dict([[l.cfg.name, l.cfg.package] for l in lambdas])
-        print(j.dumps(d, separators=(',', ': '), indent=2))
-    if functions and not lambdas:
-        if not json:
-            print('None of the specified lambda definitions were found.')
-        sys.exit(1)
 
 
 @main.command('list',
@@ -28,16 +30,15 @@ def _process(source, functions, action, json):
 @click.option('--source', '-s', default='aws-lambda.yml',
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
-@click.option('--json', '-j', is_flag=True,
-    help='Output the built packages in JSON format.'
-)
 @click.argument('functions', nargs=-1)
-def list_cmd(source, json, functions):
-    _process(
-        source, functions,
-        lambda x: sys.stdout.write('' if json else (x.cfg.name + os.linesep)),
-        json
-    )
+def list_cmd(source, functions):
+    config = bootstrap(source).get(configuration.Configuration)
+    funcdefs = config.get_functions(functions)
+    for func in funcdefs.values():
+        func.build.resolve(config.root)
+    data = dict([(key, funcdefs[key].build.package) for key in funcdefs])
+    print(j.dumps(data, separators=(',', ': '), indent=2))
+
 
 # ====== build command ====== #
 
@@ -47,12 +48,10 @@ def list_cmd(source, json, functions):
 @click.option('--source', '-s', default='aws-lambda.yml',
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
-@click.option('--json', '-j', is_flag=True,
-    help='Output the built packages in JSON format.'
-)
 @click.argument('functions', nargs=-1)
-def build(source, json, functions):
-    _process(source, functions, lambda x: x.build(silent=json), json)
+def build(source, functions):
+    from .build import BuildCommand
+    bootstrap(source).get(BuildCommand, functions).run()
 
 
 # ====== deploy command ====== #
@@ -63,13 +62,11 @@ def build(source, json, functions):
 @click.option('--source', '-s', default='aws-lambda.yml',
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
-@click.option('--json', '-j', is_flag=True,
-    help='Output the built packages in JSON format.'
-)
 @click.argument('functions', nargs=-1
 )
-def deploy(source, json, functions):
-    _process(source, functions, lambda x: x.deploy(silent=json), json)
+def deploy(source, functions):
+    from .deploy import DeployCommand
+    bootstrap(source).get(DeployCommand, functions).run()
 
 
 @main.command('version', help='Print the version number and exit.')
