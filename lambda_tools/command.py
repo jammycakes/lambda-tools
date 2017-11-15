@@ -1,12 +1,13 @@
-import click
 import json as j
 import os
 import os.path
 import sys
 
+import click
 import factoryfactory
 
 from . import configuration
+
 
 def bootstrap(lambda_file):
     services = factoryfactory.ServiceLocator()
@@ -24,6 +25,15 @@ def main():
     pass
 
 
+def _list(source, functions):
+    config = bootstrap(source).get(configuration.Configuration)
+    funcdefs = config.get_functions(functions)
+    for func in funcdefs.values():
+        func.build.resolve(config.root)
+    data = dict([(key, funcdefs[key].build.package) for key in funcdefs])
+    print(j.dumps(data, separators=(',', ': '), indent=2))
+
+
 @main.command('list',
     help='Lists the lambda functions in the definition file'
 )
@@ -32,13 +42,7 @@ def main():
 )
 @click.argument('functions', nargs=-1)
 def list_cmd(source, functions):
-    config = bootstrap(source).get(configuration.Configuration)
-    funcdefs = config.get_functions(functions)
-    for func in funcdefs.values():
-        func.build.resolve(config.root)
-    data = dict([(key, funcdefs[key].build.package) for key in funcdefs])
-    print(j.dumps(data, separators=(',', ': '), indent=2))
-
+    _list(source, functions)
 
 # ====== build command ====== #
 
@@ -48,10 +52,13 @@ def list_cmd(source, functions):
 @click.option('--source', '-s', default='aws-lambda.yml',
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
+@click.option('--terraform', is_flag=True)
 @click.argument('functions', nargs=-1)
-def build(source, functions):
+def build(source, functions, terraform):
     from .build import BuildCommand
-    bootstrap(source).get(BuildCommand, functions).run()
+    bootstrap(source).get(BuildCommand, functions, terraform).run()
+    if terraform:
+        _list(source, functions)
 
 
 # ====== deploy command ====== #

@@ -12,6 +12,7 @@ import os.path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from distutils import dir_util
 
@@ -26,7 +27,7 @@ class Package(factoryfactory.Serviceable):
     Creates a bundled package
     """
 
-    def __init__(self, cfg, bundle_folder=None):
+    def __init__(self, cfg, bundle_folder=None, terraform=False):
         """
         @param cfg
             The FunctionConfig from which the package is to be built.
@@ -37,6 +38,7 @@ class Package(factoryfactory.Serviceable):
         """
         self.root = self.services.get(configuration.Configuration).root
         self.runtime = cfg.runtime
+        self.terraform = terraform
         self.build = cfg.build
         self.build.resolve(self.root)
         if bundle_folder:
@@ -62,6 +64,7 @@ class Package(factoryfactory.Serviceable):
         """
         Installs the requirements specified in requirements.txt into the bundle.
         """
+        stdout_redirect = sys.stderr if self.terraform else sys.stdout
         with open(requirement) as f, \
             tempfile.NamedTemporaryFile(mode='w+t') as t:
             for line in f:
@@ -69,22 +72,19 @@ class Package(factoryfactory.Serviceable):
                 s = re.sub(r'^-e\s+', '', s)
                 t.file.write(s + os.linesep)
             t.flush()
-            compile_arg = '--compile' if self.build.compile_dependencies else '--no-compile'
+            compile_args = [ '--compile' if self.build.compile_dependencies else '--no-compile' ]
             if self.build.use_docker:
-                subprocess.run([
+                cmd = [
                     'docker', 'run',
                     '-v', os.path.realpath(t.name) + ':/requirements.txt',
                     '-v', os.path.realpath(self.bundle_folder) + ':/bundle',
                     '--rm', 'python:3.6.3',
-                    'pip', 'install',
-                    compile_arg, '-r', '/requirements.txt', '-t', '/bundle'
-                ])
+                    'pip', 'install', '-r', '/requirements.txt', '-t', '/bundle'
+                ]
             else:
-                pip.main([
-                    'install', compile_arg,
-                    '-r', t.name,
-                    '-t', self.bundle_folder
-                ])
+                cmd = [ 'pip', 'install', '-r', t.name, '-t', self.bundle_folder ]
+            subprocess.run(cmd + compile_args, stdout=stdout_redirect)
+
         #
         # pip doesn't preserve timestamps when installing files.
         # I think it's supposed to, but it doesn't seem to work.
@@ -138,13 +138,14 @@ class Package(factoryfactory.Serviceable):
 
 class BuildCommand(factoryfactory.Serviceable):
 
-    def __init__(self, functions):
+    def __init__(self, functions, terraform):
         self.functions = functions
+        self.terraform = terraform
 
     def run(self):
         config = self.services.get(configuration.Configuration)
         functions = config.get_functions(self.functions)
         for name in functions:
             funcdef = functions[name]
-            package = self.services.get(Package, funcdef)
+            package = self.services.get(Package, funcdef, terraform=self.terraform)
             package.create()
