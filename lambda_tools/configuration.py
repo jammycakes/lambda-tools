@@ -155,8 +155,10 @@ class BuildConfig:
             self.package = os.path.join(root, self.package)
         else:
             self.package = self.source
-            if self.package.endswith(os.sep) or self.package.endswith(os.altsep):
-                self.package = self.package[:-1]
+            if self.package.endswith(os.sep):
+                self.package = self.package[:-len(os.sep)]
+            if os.altsep and self.package.endswith(os.altsep):
+                self.package = self.package[:-len(os.altsep)]
             self.package += '.zip'
         for requirement in self.requirements:
             requirement.resolve(root)
