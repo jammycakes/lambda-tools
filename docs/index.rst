@@ -41,12 +41,8 @@ A minimal lambda definition file will look something like this:
 
         deploy:
           handler: hello.handler
-          role: service-role/lambda-role
+          role: lambda-role
           region: eu-west-2
-
-*Note: I am assuming here that you already have a role called ``lambda-role``
-configured in your AWS account. If you haven't, use the AWS console to create
-one.*
 
 Create a folder next to your lambda function called ``hello_world`` and create
 a Python script within it called ``hello.py``. Copy and paste the following
@@ -56,6 +52,17 @@ contents into it:
 
     def handler(event, context):
         return 'Hello world'
+
+If you don't already have an IAM role set up to run AWS Lambda functions, create
+one in the AWS console:
+
+ * Select the IAM service under "Services"
+ * Under "Roles", select "Create Role"
+ * Under "AWS Service" choose "Lambda" then click "Next: Permissions"
+ * Select any policies that you want to apply to the role, then choose
+   "Next: Review"
+ * Give the role a name — in this case, "lambda-role"
+ * Click "Create role"
 
 Now run:
 
@@ -72,7 +79,8 @@ Now run:
 
     ltools deploy
 
-All being well, this will deploy your code to AWS.
+All being well, this will deploy your code to AWS, in the ``eu-west-2`` (London)
+region.
 
 
 Indices and tables
