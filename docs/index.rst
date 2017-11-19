@@ -16,4 +16,6 @@ to AWS Lambda.
    Quick start <quickstart>
    Configuration <configuration>
    Command line instructions <commands>
+   Using with Terraform <terraform>
+
 
