@@ -3,7 +3,7 @@
 Configuration
 =============
 
-Lambda Tools is configured by a file called `aws-lambda.yml` placed in your
+Lambda Tools is configured by a file called ``aws-lambda.yml`` placed in your
 project's root directory. This can contain definitions for more than one
 Lambda function. A sample Lambda file might look like this:
 
