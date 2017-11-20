@@ -9,6 +9,17 @@ import factoryfactory
 from . import configuration
 
 
+def clean_errors(func):
+    def call(*args, **kwargs):
+        try:
+            func(*args, **kwargs)
+        except Exception as ex:
+            sys.stderr.write(str(ex) + os.linesep)
+            sys.exit(1)
+
+    return call
+
+
 def bootstrap(lambda_file):
     services = factoryfactory.ServiceLocator()
     filename = os.path.realpath(lambda_file)
@@ -41,6 +52,7 @@ def _list(source, functions):
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
 @click.argument('functions', nargs=-1)
+@clean_errors
 def list_cmd(source, functions):
     _list(source, functions)
 
@@ -54,6 +66,7 @@ def list_cmd(source, functions):
 )
 @click.option('--terraform', is_flag=True)
 @click.argument('functions', nargs=-1)
+@clean_errors
 def build(source, functions, terraform):
     from .build import BuildCommand
     bootstrap(source).get(BuildCommand, functions, terraform).run()
@@ -71,12 +84,14 @@ def build(source, functions, terraform):
 )
 @click.argument('functions', nargs=-1
 )
+@clean_errors
 def deploy(source, functions):
     from .deploy import DeployCommand
     bootstrap(source).get(DeployCommand, functions).run()
 
 
 @main.command('version', help='Print the version number and exit.')
+@clean_errors
 def version():
     from lambda_tools import VERSION
     print(VERSION)
