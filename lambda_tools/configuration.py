@@ -148,6 +148,7 @@ class BuildConfig:
     use_docker = mapper.BoolField(default=False)
     compile_dependencies = mapper.BoolField(default=False)
     package = mapper.StringField()
+    ignore = mapper.ListField(mapper.StringField(required=True, nullable=False))
 
     def resolve(self, root):
         self.source = os.path.join(root, self.source)

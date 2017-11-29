@@ -8,6 +8,7 @@ This involves:
  (c) Zip it all up
 """
 
+import os
 import os.path
 import re
 import shutil
@@ -46,19 +47,22 @@ class Package(factoryfactory.Serviceable):
         else:
             self.bundle_folder = None
 
-    def create_bundle_folder(self):
+    def set_bundle_folder(self):
         """
-        Ensures that the bundle folder exists.
+        Creates the path to the bundle folder.
         """
         self.bundle_folder = self.bundle_folder or os.path.realpath(tempfile.mkdtemp())
-        os.makedirs(self.bundle_folder, exist_ok=True)
 
     def copy_files(self):
         """
         Copies the files from the source folder into the bundle.
         """
-        dir_util.copy_tree(self.build.source, self.bundle_folder)
-
+        if os.path.exists(self.bundle_folder):
+            shutil.rmtree(self.bundle_folder)
+        shutil.copytree(
+            self.build.source, self.bundle_folder,
+            ignore=shutil.ignore_patterns(*self.build.ignore)
+        )
 
     def install_requirement_file(self, requirement):
         """
@@ -127,10 +131,10 @@ class Package(factoryfactory.Serviceable):
         """
         Performs all the above steps to create the bundle.
         """
-        self.create_bundle_folder()
+        self.set_bundle_folder()
         try:
-            self.install_requirements()
             self.copy_files()
+            self.install_requirements()
             self.create_archive()
         finally:
             self.remove_bundle_folder()

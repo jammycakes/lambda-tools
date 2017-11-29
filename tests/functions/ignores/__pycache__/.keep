@@ -1,0 +1,3 @@
+This file is here to make sure that we have a __pycache__ directory present
+for the unit tests. We need this because we are testing to confirm that it
+is ignored.
