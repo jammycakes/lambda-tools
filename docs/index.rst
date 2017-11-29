@@ -6,8 +6,8 @@
 Welcome to Lambda Tools
 =======================
 
-Lambda Tools is a little utility that helps you to build and deploy Python code
-to AWS Lambda.
+Lambda Tools is a utility to help you to build, test, deploy, and set up
+Continuous Delivery pipelines for Python-based serverless code in AWS Lambda.
 
 .. toctree::
    :maxdepth: 2

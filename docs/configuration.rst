@@ -23,6 +23,9 @@ Lambda function. A sample Lambda file might look like this:
           use_docker: false
           compile_dependencies: false
           package: build/hello_world.zip
+          ignore:
+            - __pycache__
+            - "*.py[cdo]"
 
         deploy:
           description: A basic Hello World handler
@@ -131,6 +134,15 @@ lambda function on OSX or Windows and some of your dependencies are written
 partly in C. If you get "Invalid ELF header" errors in AWS after uploading
 your lambda to AWS, change this setting to true. For more information see
 `this article <https://medium.freecodecamp.org/escaping-lambda-function-hell-using-docker-40b187ec1e48>`_.
+
+ignore
+++++++
+Specifies a list of file patterns to ignore when bundling the source code for
+your lambda function.
+
+This allows you to specify, for example, compiled Python scripts (``*.pyc``
+files or ``__pycache__`` folders) or your ``requirements.txt`` file if it is
+located in the same folder as your source code.
 
 deploy
 ~~~~~~

@@ -32,6 +32,10 @@ Options:
                      definitions. Default ``aws-lambda.yml``.
   --help             Show this message and exit.
 
+.. note::
+    The lambda functions being deployed must already have been built using
+    ``ltools build``.
+
 ltools list
 -----------
 
