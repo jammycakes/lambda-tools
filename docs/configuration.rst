@@ -64,6 +64,38 @@ Lambda function. A sample Lambda file might look like this:
           dead_letter_config:
             target_arn: some-dead-letter-arn
 
+It is a little known fact that YAML is actually a superset of JSON. This means
+that you can also provide your configuration in JSON format if preferred.
+As of version 0.1.2, lambda-tools will look for filenames ``aws-lambda.yml``,
+``aws-lambda.yaml`` or ``aws-lambda.json`` by default.
+
+For example, a minimal JSON configuration file might look like this:
+
+.. sourcecode: json
+
+    {
+      "version": 1,
+      "functions": {
+        "test-0.1": {
+          "runtime": "python3.6",
+          "build": {
+            "source": "src/hello_world",
+            "requirements": [
+              {
+                "file": "requirements.txt"
+              }
+            ],
+            "package": "build/hello_world.zip",
+            "ignore": [
+              "*.py[cdo]",
+              "__pycache__",
+              "requirements.txt"
+            ]
+          }
+        }
+      }
+    }
+
 The configuration sections are as follows:
 
 version
