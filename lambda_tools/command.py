@@ -21,6 +21,12 @@ def clean_errors(func):
 
 
 def bootstrap(lambda_file):
+    if not lambda_file:
+        default_files = ['aws-lambda.yml', 'aws-lambda.yaml', 'aws-lambda.json']
+        found_files = [os.path.realpath(f) for f in default_files if os.path.isfile(f)]
+        if not found_files:
+            raise FileNotFoundError('No configuration file could be found.')
+        lambda_file = found_files[0]
     services = factoryfactory.ServiceLocator()
     filename = os.path.realpath(lambda_file)
     folder = os.path.dirname(filename)
@@ -48,7 +54,7 @@ def _list(source, functions):
 @main.command('list',
     help='Lists the lambda functions in the definition file'
 )
-@click.option('--source', '-s', default='aws-lambda.yml',
+@click.option('--source', '-s', default=None,
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
 @click.argument('functions', nargs=-1)
@@ -61,7 +67,7 @@ def list_cmd(source, functions):
 @main.command('build',
     help='Build the specified lambda functions into packages ready for manual upload to AWS.'
 )
-@click.option('--source', '-s', default='aws-lambda.yml',
+@click.option('--source', '-s', default=None,
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
 @click.option('--terraform', is_flag=True)
@@ -79,7 +85,7 @@ def build(source, functions, terraform):
 @main.command('deploy',
     help='Deploy the specified lambda functions to AWS.'
 )
-@click.option('--source', '-s', default='aws-lambda.yml',
+@click.option('--source', '-s', default=None,
     help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
 )
 @click.argument('functions', nargs=-1
