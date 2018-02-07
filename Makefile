@@ -1,12 +1,12 @@
 .PHONY: test build deps release upload upload-test
 
-VERSION = $(shell python3 -c "import lambda_tools;print(lambda_tools.VERSION)")
+VERSION = $(shell python -c "import lambda_tools;print(lambda_tools.VERSION)")
 
 test:
-	python3 setup.py test -a tests
+	python setup.py test -a tests
 
 build:
-	python3 setup.py sdist
+	python setup.py sdist
 
 deps:
 	pip install -U -r requirements.txt
