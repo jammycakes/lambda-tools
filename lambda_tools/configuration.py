@@ -329,7 +329,7 @@ def upgrade(data):
 
 def load(filename):
     with open(filename) as f:
-        raw_data = yaml.load(f)
+        raw_data = yaml.safe_load(f)
         data = upgrade(raw_data)
         config = mapper.parse(Configuration, data)
         config.root = os.path.dirname(filename)

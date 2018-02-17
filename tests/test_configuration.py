@@ -11,7 +11,7 @@ import mock_boto3
 def load_yaml(filename):
     testfile = os.path.join(os.path.dirname(__file__), filename)
     with open(testfile) as f:
-        return yaml.load(f)
+        return yaml.safe_load(f)
 
 class TestSchema(unittest.TestCase):
 
