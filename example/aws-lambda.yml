@@ -1,37 +1,42 @@
 # This file contains all the information for the lambda functions.
 # Multiple packages can be defined.
 
-hello_world:
-  description: A basic Hello World handler
-  region: eu-west-1
-  runtime: python3.6
-  handler: hello.handler
-  memory: 128
-  timeout: 60
+version: 1
 
-  # Role, VPC, subnets, security groups and KMS key are all specified by name.
-  role: service-role/NONTF-lambda
-  vpc: My VPC
-  subnets:
-    - Public subnet
-    - Private subnet
-  security_groups:
-    - allow_database
-  kms_key: aws/lambda
+functions:
 
-  tags:
-    wibble: wobble
-  environment:
-    foo: bar
-    baz: glarch
+  hello_world:
+    runtime: python3.6
 
-  # tracing: PassThrough | Active
-  # dead_letter: [ARN of SQS queue or SNS topic]
+    build:
+      source: src/hello_world
+      compile_dependencies: false
+      package: build/hello_world.zip
+      use_docker: false
 
-  # Folder and file locations. All are relative to the .yml file.
-  # This is the source code for your lambda.
-  source: src/hello_world
-  # This is your requirements.txt file for any packages used by the lambda.
-  # requirements: requirements.txt
-  # This is where the built package will be saved before being uploaded to AWS.
-  package: build/hello_world.zip
+    deploy:
+      handler: hello.handler
+      role: service-role/NONTF-lambda
+      description: A basic Hello World handler
+      memory_size: 128
+      region: eu-west-2
+      timeout: 3
+
+      # Role, VPC, subnets, security groups and KMS key are all specified by name.
+      # vpc_config:
+      #   My VPC
+      #   subnets:
+      #     - Public subnet
+      #     - Private subnet
+      #   security_groups:
+      #     - allow_database
+      #   kms_key: aws/lambda
+
+      environment:
+        variables:
+          foo: bar
+          baz: glarch
+
+      tags:
+        wibble: wobble
+        foo: bar

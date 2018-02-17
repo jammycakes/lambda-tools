@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "functions": {
+    "test-0.1": {
+      "runtime": "python3.6",
+      "build": {
+        "source": "src/hello_world",
+        "requirements": [
+          {
+            "file": "requirements.txt"
+          }
+        ],
+        "use_docker": false,
+        "compile_dependencies": false,
+        "package": "build/hello_world.zip",
+        "ignore": [
+          "*.py[cdo]",
+          "__pycache__",
+          "requirements.txt"
+        ]
+      },
+      "deploy": {
+        "description": "A basic Hello World handler",
+        "region": "eu-west-1",
+        "handler": "hello.handler",
+        "memory_size": 128,
+        "timeout": 60,
+        "role": "service-role/NONTF-lambda",
+        "vpc_config": {
+          "name": "My VPC",
+          "subnets": [
+            "Public subnet",
+            {
+              "name": "Private subnet"
+            }
+          ],
+          "security_groups": [
+            {
+              "name": "allow_database"
+            }
+          ]
+        },
+        "kms_key": {
+          "name": "aws/lambda"
+        },
+        "tags": {
+          "wibble": "wobble"
+        },
+        "environment": {
+          "variables": {
+            "foo": "baz",
+            "bar": null
+          }
+        },
+        "tracing_config": {
+          "mode": "PassThrough"
+        },
+        "dead_letter_config": {
+          "target_arn": "some-dead-letter-arn"
+        }
+      }
+    }
+  }
+}

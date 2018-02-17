@@ -35,7 +35,7 @@ class PyTest(TestCommand):
 
 
 setup(
-    name='lambda_tools',
+    name='lambda-tools',
     packages=['lambda_tools'],
     version=version,
     description='A toolkit for creating and deploying Python code to AWS Lambda',
@@ -48,7 +48,7 @@ setup(
     install_requires=pip_requirements,
     zip_safe=False,
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 3 - Alpha',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3.6',
     ],

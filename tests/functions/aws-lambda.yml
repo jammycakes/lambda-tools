@@ -1,0 +1,13 @@
+version: 1
+
+functions:
+  ignores:
+    runtime: python3.6
+    build:
+      source: ignores
+      requirements:
+        - file: ignores/requirements.txt
+      package: build/ignores.zip
+      ignore:
+        - requirements.txt
+        - __pycache__

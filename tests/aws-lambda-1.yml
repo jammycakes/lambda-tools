@@ -12,6 +12,10 @@ functions:
       use_docker: false
       compile_dependencies: false
       package: build/hello_world.zip
+      ignore:
+        - "*.py[cdo]"
+        - __pycache__
+        - requirements.txt
 
     deploy:
       description: A basic Hello World handler

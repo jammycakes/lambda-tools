@@ -84,7 +84,7 @@ class Deployer(factoryfactory.Serviceable):
             'ZipFile': self._get_code()
         }
         if self.func.deploy.tags:
-            result['Tags'] = self.func.deploy.tags, 'tags'
+            result['Tags'] = self.func.deploy.tags
         return result
 
 
