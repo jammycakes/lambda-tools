@@ -165,6 +165,17 @@ class BuildConfig:
             requirement.resolve(root)
 
 
+class TestConfig:
+    source = mapper.StringField(required=True)
+    requirements = mapper.ListField(mapper.ClassField(RequirementConfig))
+    runner = mapper.ChoiceField(choices=['unittest'], default='unittest')
+
+    def resolve(self, root):
+        self.source = os.path.join(root, self.source)
+        for requirement in self.requirements:
+            requirement.resolve(root)
+
+
 class DeployConfig:
     handler = mapper.StringField(required=True)
     role = mapper.StringField(required=True)
@@ -220,6 +231,7 @@ class FunctionConfig:
         default='python3.6'
     )
     build = mapper.ClassField(BuildConfig, required=True)
+    test = mapper.ClassField(TestConfig)
     deploy = mapper.ClassField(DeployConfig)
 
     x = __builtins__

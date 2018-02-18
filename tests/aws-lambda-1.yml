@@ -17,6 +17,12 @@ functions:
         - __pycache__
         - requirements.txt
 
+    test:
+      source: tests/hello_world
+      requirements:
+        - file: test-requirements.txt
+      runner: unittest
+
     deploy:
       description: A basic Hello World handler
       region: eu-west-1
