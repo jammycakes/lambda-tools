@@ -1,7 +1,5 @@
 # Configuration schema version 1.
 
-version: 1
-
 functions:
   test-0.1:
     runtime: python3.6

@@ -237,7 +237,7 @@ class FunctionConfig:
     x = __builtins__
 
 class Configuration:
-    version = mapper.IntField(required=True)
+    version = mapper.IntField(default=1)
     functions = mapper.DictField(mapper.ClassField(FunctionConfig), required=True)
     root = ''
 
