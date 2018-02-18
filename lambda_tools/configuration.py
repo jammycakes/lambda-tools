@@ -147,20 +147,34 @@ class BuildConfig:
     requirements = mapper.ListField(mapper.ClassField(RequirementConfig))
     use_docker = mapper.BoolField(default=False)
     compile_dependencies = mapper.BoolField(default=False)
+    bundle = mapper.StringField()
     package = mapper.StringField()
     ignore = mapper.ListField(mapper.StringField(required=True, nullable=False))
 
     def resolve(self, root):
         self.source = os.path.join(root, self.source)
+
+        if self.bundle:
+            self.bundle = os.path.join(root, self.bundle)
         if self.package:
             self.package = os.path.join(root, self.package)
-        else:
+
+        if self.bundle and not self.package:
+            self.package = self.bundle + '.zip'
+        elif self.package and not self.bundle:
+            if self.package.endswith('.zip'):
+                self.bundle = self.package[:-4] + '-bundle'
+            else:
+                self.bundle = self.package + '-bundle'
+        elif not self.bundle and not self.package:
             self.package = self.source
             if self.package.endswith(os.sep):
                 self.package = self.package[:-len(os.sep)]
             if os.altsep and self.package.endswith(os.altsep):
                 self.package = self.package[:-len(os.altsep)]
+            self.bundle = self.package + '-bundle'
             self.package += '.zip'
+
         for requirement in self.requirements:
             requirement.resolve(root)
 

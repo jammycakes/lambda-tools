@@ -9,6 +9,7 @@ functions:
         - file: requirements.txt
       use_docker: false
       compile_dependencies: false
+      bundle: build/hello_world
       package: build/hello_world.zip
       ignore:
         - "*.py[cdo]"

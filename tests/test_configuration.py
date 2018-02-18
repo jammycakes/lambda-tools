@@ -37,7 +37,16 @@ class TestSchema(unittest.TestCase):
         self.assertEqual(1, len(build.requirements))
         self.assertFalse(build.use_docker)
         self.assertFalse(build.compile_dependencies)
+        self.assertEqual('build/hello_world', build.bundle)
         self.assertEqual('build/hello_world.zip', build.package)
+
+    def test_testsection(self):
+        test = self.func.test
+        self.assertEqual('tests/hello_world', test.source)
+        self.assertEqual('test-requirements.txt', test.requirements[0].file)
+        self.assertEqual(1, len(test.requirements))
+        self.assertEqual('unittest', test.runner)
+        
 
     def test_deploy_basics(self):
         deploy = self.func.deploy
