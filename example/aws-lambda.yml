@@ -14,6 +14,9 @@ functions:
       package: build/hello_world.zip
       use_docker: false
 
+    test:
+      source: src/test
+
     deploy:
       handler: hello.handler
       role: service-role/NONTF-lambda
