@@ -80,6 +80,9 @@ class TestSchema(unittest.TestCase):
 
 class TestBuildResolve(unittest.TestCase):
 
+    def assertPathEqual(self, path1, path2, *args, **kwargs):
+        self.assertEqual(os.path.normpath(path1), os.path.normpath(path2), *args, **kwargs)
+
     def setUp(self):
         self.data = load_yaml('aws-lambda-1.yml')
         self.config = mapper.parse(configuration.Configuration, self.data)
@@ -87,13 +90,13 @@ class TestBuildResolve(unittest.TestCase):
         self.func.build.resolve('/home/test')
 
     def test_source_path(self):
-        self.assertEqual('/home/test/src/hello_world', self.func.build.source)
+        self.assertPathEqual('/home/test/src/hello_world', self.func.build.source)
 
     def test_requirements_path(self):
-        self.assertEqual('/home/test/requirements.txt', self.func.build.requirements[0].file)
+        self.assertPathEqual('/home/test/requirements.txt', self.func.build.requirements[0].file)
 
     def test_package_path(self):
-        self.assertEqual('/home/test/build/hello_world.zip', self.func.build.package)
+        self.assertPathEqual('/home/test/build/hello_world.zip', self.func.build.package)
 
 
 class TestDeployResolve(unittest.TestCase):
