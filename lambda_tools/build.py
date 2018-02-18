@@ -28,7 +28,7 @@ class Package(factoryfactory.Serviceable):
     Creates a bundled package
     """
 
-    def __init__(self, cfg, bundle_folder=None, terraform=False):
+    def __init__(self, cfg, terraform=False):
         """
         @param cfg
             The FunctionConfig from which the package is to be built.
@@ -42,16 +42,8 @@ class Package(factoryfactory.Serviceable):
         self.terraform = terraform
         self.build = cfg.build
         self.build.resolve(self.root)
-        if bundle_folder:
-            self.bundle_folder = os.path.join(self.root, bundle_folder)
-        else:
-            self.bundle_folder = None
-
-    def set_bundle_folder(self):
-        """
-        Creates the path to the bundle folder.
-        """
-        self.bundle_folder = self.bundle_folder or os.path.realpath(tempfile.mkdtemp())
+        self.test = cfg.test
+        self.bundle_folder = cfg.build.bundle
 
     def copy_files(self):
         """
@@ -131,13 +123,13 @@ class Package(factoryfactory.Serviceable):
         """
         Performs all the above steps to create the bundle.
         """
-        self.set_bundle_folder()
         try:
             self.copy_files()
             self.install_requirements()
             self.create_archive()
         finally:
-            self.remove_bundle_folder()
+            if not self.test:
+                self.remove_bundle_folder()
 
 
 class BuildCommand(factoryfactory.Serviceable):
