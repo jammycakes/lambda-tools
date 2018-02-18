@@ -194,13 +194,3 @@ class TestDeployResolve(unittest.TestCase):
             ['subnet-12345678', 'subnet-11111111'],
             [x.id for x in deploy.vpc_config.subnets]
         )
-
-
-
-class TestUpgrade(TestSchema):
-
-    def setUp(self):
-        self.data = load_yaml('aws-lambda-0.yml')
-        self.data = configuration.upgrade(self.data)
-        self.config = mapper.parse(configuration.Configuration, self.data)
-        self.func = self.config.functions['test-0.0']
