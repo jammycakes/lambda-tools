@@ -15,7 +15,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-from distutils import dir_util
 
 import factoryfactory
 import pip
