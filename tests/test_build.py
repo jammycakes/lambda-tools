@@ -12,7 +12,7 @@ class TestIgnores(unittest.TestCase):
         cfg = configuration.load(os.path.join(root, 'aws-lambda.yml'))
         ignores = cfg.functions['ignores']
         ignores.build.resolve(root)
-        self.package = build.Package(ignores)
+        self.package = build.Package(ignores, '')
 
     def test_build(self):
         self.package.create()

@@ -80,6 +80,21 @@ def build(source, functions, terraform):
         _list(source, functions)
 
 
+# ====== test command ====== #
+
+@main.command('test',
+    help='Run the unit tests.'
+)
+@click.option('--source', '-s', default=None,
+    help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
+)
+@click.argument('functions', nargs=-1)
+@clean_errors
+def test(source, functions):
+    from .build import TestCommand
+    bootstrap(source).get(TestCommand, functions).run()
+
+
 # ====== deploy command ====== #
 
 @main.command('deploy',

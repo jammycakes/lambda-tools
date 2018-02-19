@@ -183,6 +183,7 @@ class TestConfig:
     source = mapper.StringField(required=True)
     requirements = mapper.ListField(mapper.ClassField(RequirementConfig))
     runner = mapper.ChoiceField(choices=['unittest'], default='unittest')
+    ignore = mapper.ListField(mapper.StringField(required=True, nullable=False))
 
     def resolve(self, root):
         self.source = os.path.join(root, self.source)

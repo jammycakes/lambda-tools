@@ -21,13 +21,16 @@ import pip
 
 from . import configuration
 
+class TestError(Exception):
+    pass
+
 
 class Package(factoryfactory.Serviceable):
     """
     Creates a bundled package
     """
 
-    def __init__(self, cfg, terraform=False):
+    def __init__(self, cfg, name, terraform=False):
         """
         @param cfg
             The FunctionConfig from which the package is to be built.
@@ -37,6 +40,7 @@ class Package(factoryfactory.Serviceable):
             The temporary folder into which the packgage is to be created.
         """
         self.root = self.services.get(configuration.Configuration).root
+        self.name = name
         self.runtime = cfg.runtime
         self.terraform = terraform
         self.build = cfg.build
@@ -96,8 +100,8 @@ class Package(factoryfactory.Serviceable):
                 os.utime(filepath, times)
 
 
-    def install_requirements(self):
-        for requirement in self.build.requirements or []:
+    def install_requirements(self, requirements):
+        for requirement in requirements or []:
             self.install_requirement_file(requirement.file)
 
 
@@ -124,11 +128,47 @@ class Package(factoryfactory.Serviceable):
         """
         try:
             self.copy_files()
-            self.install_requirements()
+            self.install_requirements(self.build.requirements)
             self.create_archive()
         finally:
             if not self.test:
                 self.remove_bundle_folder()
+
+    def run_tests(self):
+        """
+        Runs the unit tests.
+
+        @returns
+            true if tests were run, otherwise false.
+        """
+        if not self.test:
+            return False
+
+        if not os.path.isdir(self.bundle_folder):
+            raise TestError('Function {0} has not yet been built.'.format(self.name))
+
+        from . import test_runners
+        test_runners.register(self.services)
+
+        test_runner = self.services.get("test-runner." + self.test.runner)
+        if not test_runner:
+            raise TestError('Test runner {0} was not found.'.format(self.test.runner))
+
+        test_folder = os.path.join(self.bundle_folder, 'test')
+        if os.path.isdir(test_folder):
+            shutil.rmtree(test_folder)
+        shutil.copytree(
+            self.test.source, test_folder,
+            ignore=shutil.ignore_patterns(*self.test.ignore)
+        )
+        self.install_requirements(self.test.requirements)
+
+        sys.path.insert(0, self.bundle_folder)
+        try:
+            test_runner.run_tests(self, test_folder)
+        finally:
+            del sys.path[0]
+        return True
 
 
 class BuildCommand(factoryfactory.Serviceable):
@@ -142,5 +182,19 @@ class BuildCommand(factoryfactory.Serviceable):
         functions = config.get_functions(self.functions)
         for name in functions:
             funcdef = functions[name]
-            package = self.services.get(Package, funcdef, terraform=self.terraform)
+            package = self.services.get(Package, funcdef, name, terraform=self.terraform)
             package.create()
+
+
+class TestCommand(factoryfactory.Serviceable):
+
+    def __init__(self, functions):
+        self.functions = functions
+
+    def run(self):
+        config = self.services.get(configuration.Configuration)
+        functions = config.get_functions(self.functions)
+        for name in functions:
+            funcdef = functions[name]
+            package = self.services.get(Package, funcdef, name)
+            package.run_tests()
