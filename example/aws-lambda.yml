@@ -9,13 +9,13 @@ functions:
     runtime: python3.6
 
     build:
-      source: src/hello_world
+      source: src
       compile_dependencies: false
       package: build/hello_world.zip
       use_docker: false
 
     test:
-      source: src/test
+      source: test
 
     deploy:
       handler: hello.handler
