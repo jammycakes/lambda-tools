@@ -188,7 +188,6 @@ class Package(factoryfactory.Serviceable):
         """
         Removes the bundle folder and deployment package if specified.
         """
-        print(str(all))
         self.remove_bundle_folder()
         if all:
             self.remove_deployment_package()
