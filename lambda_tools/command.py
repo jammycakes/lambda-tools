@@ -95,6 +95,22 @@ def test(source, functions):
     bootstrap(source).get(TestCommand, functions).run()
 
 
+# ====== clean command ====== #
+
+@main.command('clean', help='Remove the bundle folder, and optionally the build package.')
+@click.option('--source', '-s', default=None,
+    help='Specifies the source file containing the lambda definitions. Default aws-lambda.yml.'
+)
+@click.option('--all', '-a', is_flag=True,
+    help='Remove the deployment package as well as the bundle.'
+)
+@click.argument('functions', nargs=-1)
+@clean_errors
+def clean(source, functions, all):
+    from .build import CleanCommand
+    bootstrap(source).get(CleanCommand, functions, all).run()
+
+
 # ====== deploy command ====== #
 
 @main.command('deploy',

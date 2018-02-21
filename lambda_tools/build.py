@@ -115,13 +115,6 @@ class Package(factoryfactory.Serviceable):
         fmt = fmt.replace(os.path.extsep, '') or 'zip'
         shutil.make_archive(base_name, fmt, self.bundle_folder, './', True)
 
-    def remove_bundle_folder(self):
-        """
-        Removes the bundle folder.
-        """
-        shutil.rmtree(self.bundle_folder)
-        self.bundle_folder = None
-
     def create(self):
         """
         Performs all the above steps to create the bundle.
@@ -170,6 +163,36 @@ class Package(factoryfactory.Serviceable):
             del sys.path[0]
         return True
 
+    def remove_bundle_folder(self):
+        """
+        Removes the bundle folder.
+        """
+        print('Removing bundle folder ' + self.bundle_folder)
+        if os.path.isdir(self.bundle_folder):
+            shutil.rmtree(self.bundle_folder)
+        elif os.path.exists(self.bundle_folder):
+            os.unlink(self.bundle_folder)
+        self.bundle_folder = None
+
+    def remove_deployment_package(self):
+        """
+        Removes the deployment package.
+        """
+        print('Removing build package ' + self.build.package)
+        if os.path.isdir(self.build.package):
+            shutil.rmtree(self.build.package)
+        elif os.path.exists(self.build.package):
+            os.unlink(self.build.package)
+
+    def clean(self, all):
+        """
+        Removes the bundle folder and deployment package if specified.
+        """
+        print(str(all))
+        self.remove_bundle_folder()
+        if all:
+            self.remove_deployment_package()
+
 
 class BuildCommand(factoryfactory.Serviceable):
 
@@ -198,3 +221,18 @@ class TestCommand(factoryfactory.Serviceable):
             funcdef = functions[name]
             package = self.services.get(Package, funcdef, name)
             package.run_tests()
+
+
+class CleanCommand(factoryfactory.Serviceable):
+
+    def __init__(self, functions, all):
+        self.functions = functions
+        self.all = all
+
+    def run(self):
+        config = self.services.get(configuration.Configuration)
+        functions = config.get_functions(self.functions)
+        for name in functions:
+            funcdef = functions[name]
+            package = self.services.get(Package, funcdef, name)
+            package.clean(self.all)
