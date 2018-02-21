@@ -44,8 +44,6 @@ functions:
 
 ### `ltools clean` command
 
-*Not yet implemented*
-
 This will remove the bundle folder after running your tests.
 
 Note: if you have not declared a `tests` section, the bundle folder will be
