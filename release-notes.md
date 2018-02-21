@@ -1,12 +1,31 @@
 Release notes
 =============
 
-Version 0.2.0
--------------
+Version 0.2.0.a0
+----------------
+This is a pre-release version. The functionality described below may change
+before the final version is released.
 
 ### Test runner
 
-*Not yet started.*
+Added a new command, `ltools test` and a corresponding `test` configuration
+section. The test settings are as follows:
+
+```yaml
+functions:
+  my_function:
+    test:
+      source: # path to source folder containing tests
+      requirements:
+        # requirements.txt file(s) to include with tests.
+        # syntax is the same as for requirements section in build.
+      runner:
+        # The test runner to use to run the tests.
+        # Currently only unittest is supported.
+      ignore:
+        # Files to ignore when copying tests into the bundle.
+        # syntax is the same as for ignore section in build.
+```
 
 ### `bundle` setting
 
