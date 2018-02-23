@@ -1,12 +1,21 @@
-Release notes
-=============
-
-Version 0.2.0.a0
-----------------
+Version 0.2.0a2
+===============
 This is a pre-release version. The functionality described below may change
 before the final version is released.
 
-### Test runner
+## Changes and bug fixes:
+
+ * Added more details to the help text for the commands.
+ * Rewrote command parsing code to make reuse easier.
+ * Removed a spurious print statement.
+
+
+Version 0.2.0a1
+===============
+This is a pre-release version. The functionality described below may change
+before the final version is released.
+
+## Test runner
 
 Added a new command, `ltools test` and a corresponding `test` configuration
 section. The test settings are as follows:
@@ -27,7 +36,7 @@ functions:
         # syntax is the same as for ignore section in build.
 ```
 
-### `bundle` setting
+## `bundle` setting
 
 Before creating the zip package, the files are copied into a "bundle"
 directory. In previous releases of lambda-tools, this was created in a
@@ -42,7 +51,7 @@ functions:
       bundle: build/bundle
 ```
 
-### `ltools clean` command
+## `ltools clean` command
 
 This will remove the bundle folder after running your tests.
 
@@ -50,7 +59,7 @@ Note: if you have not declared a `tests` section, the bundle folder will be
 removed automatically after `ltools build` has completed. This preserves the
 behaviour of version 0.1.
 
-### Version 0.0 configuration is no longer supported.
+## Version 0.0 configuration is no longer supported.
 
 The initial configuration format from version 0.0 is no longer supported.
 Additionally, the version number tag at the start of the configuration file
