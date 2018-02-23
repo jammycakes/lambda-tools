@@ -161,17 +161,3 @@ class Deployer(factoryfactory.Serviceable):
             self.update()
         else:
             self.create()
-
-
-class DeployCommand(factoryfactory.Serviceable):
-
-    def __init__(self, functions):
-        self.functions = functions
-
-    def run(self):
-        config = self.services.get(configuration.Configuration)
-        functions = config.get_functions(self.functions)
-        for name in functions:
-            funcdef = functions[name]
-            package = self.services.get(Deployer, funcdef, name)
-            package.deploy()
