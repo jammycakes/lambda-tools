@@ -4,7 +4,7 @@ import os.path
 import sys
 
 import click
-import factoryfactory
+from lambda_tools import factoryfactory
 
 from . import configuration
 

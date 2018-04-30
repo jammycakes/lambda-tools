@@ -17,7 +17,7 @@ import sys
 import tempfile
 from distutils import dir_util
 
-import factoryfactory
+from lambda_tools import factoryfactory
 import pip
 
 from . import configuration

@@ -3,11 +3,9 @@ Functionality to instantiate and upload the lambda in AWS.
 """
 
 import os.path
-
 import boto3
-import factoryfactory
-
 from lambda_tools import configuration
+from lambda_tools import factoryfactory
 
 class DeployError(Exception):
     pass

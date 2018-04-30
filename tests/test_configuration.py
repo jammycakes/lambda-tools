@@ -3,7 +3,7 @@ import unittest
 import yaml
 
 import boto3
-import factoryfactory
+from lambda_tools import factoryfactory
 from lambda_tools import configuration
 from lambda_tools import mapper
 import mock_boto3
