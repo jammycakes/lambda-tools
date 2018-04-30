@@ -1,5 +1,4 @@
 import os.path
-import pip
 import sys
 
 from setuptools import setup
@@ -7,13 +6,7 @@ from setuptools.command.test import test as TestCommand
 
 import lambda_tools
 
-requirements = pip.req.parse_requirements(
-    'requirements.txt', session=pip.download.PipSession(),
-)
-pip_requirements = [str(r.req) for r in requirements]
-
 version = lambda_tools.VERSION
-
 
 class PyTest(TestCommand):
     user_options = [('pytest-args=', 'a', "Arguments to pass to py.test")]
@@ -45,7 +38,11 @@ setup(
     url='https://github.com/jammycakes/lambda-tools',
     download_url = 'https://github.com/jammycakes/lambda-tools/archive/{0}.tar.gz'.format(version),
     license='MIT',
-    install_requires=pip_requirements,
+    install_requires=[
+        'boto3',
+        'click',
+        'PyYAML',
+    ],
     zip_safe=False,
     classifiers=[
         'Development Status :: 3 - Alpha',
